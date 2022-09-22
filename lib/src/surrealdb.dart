@@ -1,0 +1,199 @@
+import 'package:surrealdb/src/pinger.dart';
+
+import './ws.dart';
+
+class SurrealDB {
+  final String url;
+  final String? token;
+  Pinger? _pinger;
+
+  SurrealDB(this.url, [this.token]);
+
+  final _wsService = WSService();
+
+  /// Connects to a local or remote database endpoint.
+  /// @param url - The url of the database endpoint to connect to.
+  connect() {
+    _wsService.connect(url);
+    _pinger = Pinger(const Duration(seconds: 30));
+    _wsService.waitConnect.then((value) => _pinger?.start(() => ping()));
+    if (token != null) authenticate(token!);
+  }
+
+  /// Closes the persistent connection to the database.
+  close() {
+    _wsService.disconnect();
+  }
+
+  /// Waits for the connection to the database to succeed.
+  Future<void> wait() async {
+    return _wsService.waitConnect;
+  }
+
+  /// Ping SurrealDB instance
+  Future<bool> ping() async {
+    return (await _wsService.rpc('ping')) as bool;
+  }
+
+  /// Switch to a specific namespace and database.
+  /// @param ns - Switches to a specific namespace.
+  /// @param db - Switches to a specific database.
+  Future<void> use(String ns, String db) {
+    return _wsService.rpc('use', [ns, db]);
+  }
+
+  /// Retreive info about the current Surreal instance
+  /// @return Returns nothing!
+  Future<Object?> info() {
+    return _wsService.rpc('info');
+  }
+
+  /// Signs up to a specific authentication scope.
+  /// @param vars - Variables used in a signup query.
+  /// @return The authenication token.
+  Future<String> signup(String user, String pass) async {
+    return (await _wsService.rpc('signup', [
+      {'user': user, 'pass': pass}
+    ])) as String;
+  }
+
+  /// Signs in to a specific authentication scope.
+  /// @param vars - Variables used in a signin query.
+  /// @return The authenication token.
+  Future<Object?> signin(String user, String pass) {
+    return _wsService.rpc('signin', [
+      {'user': user, 'pass': pass}
+    ]);
+  }
+
+  /// Invalidates the authentication for the current connection.
+  Future<void> invalidate() {
+    return _wsService.rpc('invalidate');
+  }
+
+  /// Authenticates the current connection with a JWT token.
+  /// @param token - The JWT authentication token.
+  Future<void> authenticate(String token) {
+    return _wsService.rpc('authenticate', [token]);
+  }
+
+  /// Kill a specific query.
+  /// @param query - The query to kill.
+  Future<void> kill(String query) {
+    return _wsService.rpc('kill', [query]);
+  }
+
+  /// Switch to a specific namespace and database.
+  /// @param key - Specifies the name of the variable.
+  /// @param val - Assigns the value to the variable name.
+  Future<String> let(String key, String val) async {
+    return (await _wsService.rpc('let', [key, val])) as String;
+  }
+
+  /// Creates a record in the database.
+  /// @param thing - The table name or the specific record ID to create.
+  /// @param data - The document / record data to insert (should json encodable object or Class has toJson method).
+  Future<Object?> create(String thing, dynamic data) async {
+    try {
+      return await _wsService.rpc('create', [
+        thing,
+        data.toJson(),
+      ]);
+    } on NoSuchMethodError catch (_) {}
+    try {
+      return await _wsService.rpc('create', [
+        thing,
+        data,
+      ]);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Selects all records in a table, or a specific record, from the database.
+  /// @param thing - The table name or a record ID to select.
+  Future<List<T>> select<T>(String table) async {
+    return (await _wsService.rpc('select', [table])) as List<T>;
+  }
+
+  // Future<List<T>> selectTyped<T>(String table, T type) async {
+  //   try {
+  //     // call fromjson method from generic type
+  //     var res = await _wsService.rpc('select', [table]);
+  //     if (res is List) {
+  //       return res.map((e) => (type as dynamic).fromJson(e)).toList()
+  //           as List<T>;
+  //     } else {
+  //       return (type as dynamic).fromJson(res);
+  //     }
+  //   } on NoSuchMethodError catch (_) {
+  //     throw Exception('data must be a class with fromJson() method');
+  //   }
+  // }
+
+  /// Runs a set of SurrealQL statements against the database.
+  /// @param query - Specifies the SurrealQL statements.
+  /// @param vars - Assigns variables which can be used in the query.
+  Future<Object?> query(
+    String query, [
+    Map<String, Object?>? vars,
+  ]) async {
+    return await _wsService.rpc('query', [
+      query,
+      if (vars != null) vars,
+    ]);
+  }
+
+  /// Updates all records in a table, or a specific record, in the database.
+  ///
+  /// ***NOTE: This function replaces the current document / record data with the specified data.***
+  /// @param thing - The table name or the specific record ID to update.
+  /// @param data - The document / record data to insert.
+  Future<Object?> update(
+    String thing, [
+    Object? data,
+  ]) {
+    return _wsService.rpc('update', [thing, data]);
+  }
+
+  /// Modifies all records in a table, or a specific record, in the database.
+  ///
+  /// ***NOTE: This function merges the current document / record data with the specified data.***
+  /// @param thing - The table name or the specific record ID to change.
+  /// @param data - The document / record data to insert.
+  Future<Object?> change(
+    String thing, [
+    Object? data,
+  ]) {
+    return _wsService.rpc('update', [thing, data]);
+  }
+
+  /// Applies JSON Patch changes to all records, or a specific record, in the database.
+  ///
+  /// ***NOTE: This function patches the current document / record data with the specified JSON Patch data.***
+  /// @param thing - The table name or the specific record ID to modify.
+  /// @param data - The JSON Patch data with which to modify the records.
+  Future<void> modify(
+    String thing, [
+    Object? data,
+  ]) {
+    return _wsService.rpc('modify', [thing, data]);
+  }
+
+  /// Deletes all records in a table, or a specific record, from the database
+  /// [thing] is the table name or the record id
+  Future<void> delete(String thing) {
+    return _wsService.rpc('delete', [thing]);
+  }
+
+  /// Subscribe to a table
+  Future<Object?> live(
+    String query, [
+    Map<String, Object?>? vars,
+  ]) async {
+    return await _wsService.rpc('live', [
+      query,
+      if (vars != null) vars,
+    ]);
+  }
+}

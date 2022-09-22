@@ -1,5 +1,7 @@
 library surrealdb;
 
+export 'src/surrealdb.dart';
+
 /// A Calculator.
 class Calculator {
   /// Returns [value] plus 1.
