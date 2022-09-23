@@ -15,6 +15,8 @@ void main(List<String> args) async {
   await client.use('test', 'test');
   await client.signin('root', 'root');
 
+  await client.create('person', TestModel(false, 'title'));
+
   var person = await client.create('person', {
     'title': 'Founder & CEO',
     'name': {
@@ -23,6 +25,7 @@ void main(List<String> args) async {
     },
     'marketing': false,
   });
+  print(person);
 
   List<Map<String, Object?>> persons = await client.select('person');
 
@@ -32,6 +35,10 @@ void main(List<String> args) async {
       'tb': 'person',
     },
   );
+
+  print(groupBy);
+
+  print(persons.length);
 }
 ```
 
