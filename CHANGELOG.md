@@ -1,3 +1,11 @@
+## 0.4.3
+
+- fix example & readme
+
+## 0.4.2
+
+- update readme
+
 ## 0.4.1
 
 - remove print statements

@@ -39,12 +39,6 @@ void main(List<String> args) async {
 
 ### `connect()`
 
-- **userId** <sup>_string_</sup>: user id
-- **oldPass** <sup>_string_</sup>: old password
-- **newPass** <sup>_string_</sup>: new password
-
-### `connect()`
-
 Connects to a database endpoint provided in constructer and authenticate with token if provided in constructer.
 
 ### `close()`

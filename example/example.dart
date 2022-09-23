@@ -4,7 +4,8 @@ import 'package:surrealdb/surrealdb.dart';
 void main(List<String> args) async {
   var client = SurrealDB('ws://localhost:8000/rpc');
 
-  await client.connect();
+  client.connect();
+  await client.wait();
 
   await client.use('test', 'test');
 
