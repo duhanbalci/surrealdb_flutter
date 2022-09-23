@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:surrealdb/src/event_emitter.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:dartx/dartx.dart';
 
 typedef WsFunctionParam = Map<String, dynamic>;
 typedef WsFunction = void Function(WsFunctionParam);
@@ -49,12 +48,12 @@ class WSService {
       methodBus.once('connect', (_) async {
         print("ws: connected");
         _connectedCompleter.complete();
-        reconnectDuration = 100.milliseconds;
+        reconnectDuration = const Duration(milliseconds: 100);
       });
     } catch (e) {
       print("ws error: $e");
     }
-    var ping = await rpc('ping', []);
+    var ping = await rpc('ping', [], Duration.zero);
     if (ping == true) {
       methodBus.emit('connect', {});
     }
@@ -101,7 +100,11 @@ class WSService {
     return id.toString();
   }
 
-  Future<Object?> rpc(String method, [List<Object?> data = const []]) {
+  Future<Object?> rpc(
+    String method, [
+    List<Object?> data = const [],
+    Duration? timeout,
+  ]) {
     final completer = Completer<Object?>();
 
     final ws = _ws;
@@ -122,10 +125,12 @@ class WSService {
       ),
     );
 
-    Future.delayed(const Duration(seconds: 5), () {
-      if (completer.isCompleted) return;
-      completer.completeError('timeout');
-    });
+    if (timeout != Duration.zero) {
+      Future.delayed(timeout ?? const Duration(seconds: 5), () {
+        if (completer.isCompleted) return;
+        completer.completeError('timeout');
+      });
+    }
 
     methodBus.once<RpcResponse>(id, (rpcResponse) {
       if (rpcResponse.error != null) {

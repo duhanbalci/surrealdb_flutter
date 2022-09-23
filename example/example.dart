@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:surrealdb/src/surrealdb.dart';
 import 'package:surrealdb/surrealdb.dart';
 
