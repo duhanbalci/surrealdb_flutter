@@ -35,6 +35,8 @@ void main(List<String> args) async {
 }
 ```
 
+## Features
+
 ### `connect()`
 
 - **userId** <sup>_string_</sup>: user id
