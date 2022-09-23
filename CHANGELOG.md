@@ -1,3 +1,7 @@
+## 0.4.5
+
+- update readme
+
 ## 0.4.4
 
 - fix example
