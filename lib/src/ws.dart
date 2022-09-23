@@ -144,7 +144,7 @@ class WSService {
       Object result = messageDecoded["result"] ?? {};
 
       methodBus.emit(id, RpcResponse(result, error));
-    } catch (e, stack) {
+    } catch (_) {
       rethrow;
     }
   }
