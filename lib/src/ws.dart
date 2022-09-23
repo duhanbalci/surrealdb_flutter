@@ -36,22 +36,19 @@ class WSService {
         cancelOnError: true,
         onDone: onDone,
         onError: (e) {
-          print('error');
           if (e is WebSocketChannelException) {
             onDone();
           } else {
             onDone();
           }
-          print('got error in stream: $e');
         },
       );
       methodBus.once('connect', (_) async {
-        print("ws: connected");
         _connectedCompleter.complete();
         reconnectDuration = const Duration(milliseconds: 100);
       });
     } catch (e) {
-      print("ws error: $e");
+      rethrow;
     }
     var ping = await rpc('ping', [], Duration.zero);
     if (ping == true) {
@@ -73,11 +70,8 @@ class WSService {
     // _ws = null;
   }
 
-  void onDone([e]) async {
-    if (e != null) print(e);
-    print('ws: closed');
+  void onDone() async {
     if (!_shouldReconnect) return;
-    print("ws: reconnect after $reconnectDuration");
 
     await Future.delayed(reconnectDuration);
 
@@ -87,10 +81,8 @@ class WSService {
     }
 
     try {
-      print('ws: retry');
       await connect(url);
     } catch (e) {
-      print("ws: error $e");
       onDone();
     }
   }
@@ -144,7 +136,6 @@ class WSService {
   }
 
   void _handleMessage(String message) async {
-    print(message);
     try {
       var messageDecoded = json.decode(message) as Map<String, dynamic>;
 
@@ -154,8 +145,7 @@ class WSService {
 
       methodBus.emit(id, RpcResponse(result, error));
     } catch (e, stack) {
-      print('error when _handleMessage: $e');
-      print(stack);
+      rethrow;
     }
   }
 }

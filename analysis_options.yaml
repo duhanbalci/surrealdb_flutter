@@ -3,4 +3,3 @@
 
 linter:
   rules:
-    avoid_print: false
