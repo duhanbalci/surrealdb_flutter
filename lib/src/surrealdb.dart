@@ -13,7 +13,7 @@ class SurrealDB {
 
   /// Connects to a local or remote database endpoint.
   /// @param url - The url of the database endpoint to connect to.
-  connect() {
+  void connect() {
     _wsService.connect(url);
     _pinger = Pinger(const Duration(seconds: 30));
     _wsService.waitConnect.then((value) => _pinger?.start(() => ping()));
@@ -21,7 +21,7 @@ class SurrealDB {
   }
 
   /// Closes the persistent connection to the database.
-  close() {
+  void close() {
     _wsService.disconnect();
   }
 
@@ -83,7 +83,7 @@ class SurrealDB {
     return _wsService.rpc('kill', [query]);
   }
 
-  /// Switch to a specific namespace and database.
+  /// Assigns a value as a parameter for this connection.
   /// @param key - Specifies the name of the variable.
   /// @param val - Assigns the value to the variable name.
   Future<String> let(String key, String val) async {
