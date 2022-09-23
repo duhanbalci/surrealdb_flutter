@@ -2,12 +2,16 @@ import 'package:surrealdb/src/surrealdb.dart';
 import 'package:surrealdb/surrealdb.dart';
 
 void main(List<String> args) async {
-  var client = SurrealDB('ws://localhost:8000/rpc');
+  final client = SurrealDB('ws://localhost:8000/rpc');
+
   client.connect();
   await client.wait();
   await client.use('test', 'test');
   await client.signin('root', 'root');
-  await client.create('person', {
+
+  await client.create('person', TestModel(false, 'title'));
+
+  var person = await client.create('person', {
     'title': 'Founder & CEO',
     'name': {
       'first': 'Tobie',
@@ -15,34 +19,20 @@ void main(List<String> args) async {
     },
     'marketing': false,
   });
-  await client.select('person');
-  await client.query(
+  print(person);
+
+  List<Map<String, Object?>> persons = await client.select('person');
+
+  final groupBy = await client.query(
     'SELECT marketing, count() FROM type::table(\$tb) GROUP BY marketing',
     {
       'tb': 'person',
     },
   );
-  // await client.live(
-  //   'person',
-  //   {
-  //     'tb': 'person',
-  //   },
-  // );
-  // await client.query('live select * from person');
-  // Timer.periodic(const Duration(seconds: 5), (timer) async {
-  //   var s = await client.create('person', {
-  //     'title': 'Founder & CEO',
-  //     'name': {
-  //       'first': 'Tobie',
-  //       'last': 'Morgan Hitchcock',
-  //     },
-  //     'marketing': false,
-  //   });
-  //   // print(s);
-  // });
-  await client.create('person', TestModel(false, 'Title'));
-  // var s = await client.query("SELECT count() from person group by id");
-  // ws.connect('asd');
+
+  print(groupBy);
+
+  print(persons.length);
 }
 
 class AMODEL {

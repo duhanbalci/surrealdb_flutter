@@ -1,3 +1,7 @@
+## 0.4.4
+
+- fix example
+
 ## 0.4.3
 
 - fix example & readme

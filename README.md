@@ -102,12 +102,12 @@ Runs a set of SurrealQL statements against the database
 Updates all records in a table, or a specific record, in the database
 **_NOTE: This function replaces the current document / record data with the specified data._**
 
-### `change(String thing, [Object? data])``
+### `change(String thing, [Object? data])`
 
 Modifies all records in a table, or a specific record, in the database
 **_NOTE: This function merges the current document / record data with the specified data._**
 
-### `modify(String thing, [Object? data])``
+### `modify(String thing, [Object? data])`
 
 Applies JSON Patch changes to all records, or a specific record, in the database
 **_NOTE: This function patches the current document / record data with the specified JSON Patch data._**

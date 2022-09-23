@@ -11,7 +11,7 @@ void main(List<String> args) async {
 
   await client.signin('root', 'root');
 
-  await client.create('person', PersonModel(false, 'Title'));
+  await client.create('person', TestModel(false, 'Title'));
 
   await client.create('person', {
     'title': 'Founder & CEO',
@@ -36,13 +36,20 @@ void main(List<String> args) async {
   await client.query('live select * from person');
 }
 
-class PersonModel {
+class TestModel {
   final bool marketing;
   final String title;
 
-  PersonModel(this.marketing, this.title);
+  TestModel(this.marketing, this.title);
 
   static fromJson(Map<String, dynamic> json) {
-    return PersonModel(json['marketing'], json['title']);
+    return TestModel(json['marketing'], json['title']);
+  }
+
+  toJson() {
+    return {
+      'marketing': marketing,
+      'title': title,
+    };
   }
 }
