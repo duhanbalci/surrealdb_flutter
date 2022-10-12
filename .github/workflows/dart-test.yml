@@ -35,10 +35,11 @@ jobs:
       - name: Analyze project source
         run: dart analyze
         
-      - name: install and run surreal
-        run: |
-          - curl -sSf https://install.surrealdb.com | sh
-          - surreal start --log debug --user root --pass root memory &
+      - name: Start SurrealDB
+        uses: jvllmr/surrealdb-action@1.0.0
+        with:
+          surrealdb-version: latest
+          surrealdb-port: 8000
 
       # Your project will need to have tests in test/ and a dependency on
       # package:test for this step to succeed. Note that Flutter projects will
