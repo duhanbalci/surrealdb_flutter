@@ -35,10 +35,10 @@ jobs:
       - name: Analyze project source
         run: dart analyze
         
-      - name: Use SurrealDB in GitHub Actions
-        # You may pin to the exact commit or the version.
-        # uses: jvllmr/surrealdb-action@7b5a0e7d7cae3b899f90164c036f298ce459a7d9
-        uses: jvllmr/surrealdb-action@1.0.0
+      - name: install and run surreal
+        run: |
+          - curl -sSf https://install.surrealdb.com | sh
+          - surreal start --log debug --user root --pass root memory &
 
       # Your project will need to have tests in test/ and a dependency on
       # package:test for this step to succeed. Note that Flutter projects will
