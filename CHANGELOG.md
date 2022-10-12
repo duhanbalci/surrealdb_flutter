@@ -1,3 +1,7 @@
+## [0.4.6]
+
+- fixed ([#2](https://github.com/duhanbalci/surrealdb_flutter/pull/2))
+
 ## 0.4.5
 
 - update readme
