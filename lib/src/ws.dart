@@ -102,7 +102,7 @@ class WSService {
     final ws = _ws;
 
     if (ws == null) {
-      return (completer..completeError('ws not connected')).future;
+      return (completer..completeError('websocket not connected')).future;
     }
 
     var id = getNextId();
