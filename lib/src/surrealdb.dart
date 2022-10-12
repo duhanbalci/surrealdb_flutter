@@ -22,6 +22,8 @@ class SurrealDB {
 
   /// Closes the persistent connection to the database.
   void close() {
+    _pinger?.stop();
+    _pinger = null;
     _wsService.disconnect();
   }
 
