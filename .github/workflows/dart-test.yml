@@ -34,19 +34,9 @@ jobs:
       # Consider passing '--fatal-infos' for slightly stricter analysis.
       - name: Analyze project source
         run: dart analyze
-        
-      #- name: Start SurrealDB
-       # uses: jvllmr/surrealdb-action@1.0.0
-        #with:
-          #surrealdb-version: latest
-          #surrealdb-port: 8000
+
       - name: ttt
-        run: docker run --pull --rm -d -p 8000:8000 surrealdb/surrealdb:nightly start --user root --pass root
-      #- name: Run the build process with Docker
-       # uses: addnab/docker-run-action@v3
-        #with:
-         # image: aschmelyun/cleaver:latest
-          #options: -p 8000:8000 surrealdb/surrealdb:nightly start --user root --pass root
+        run: docker pull surrealdb/surrealdb:nightly && docker run -d -p 8000:8000 surrealdb/surrealdb:nightly start --user root --pass root start
 
       # Your project will need to have tests in test/ and a dependency on
       # package:test for this step to succeed. Note that Flutter projects will
