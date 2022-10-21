@@ -50,10 +50,8 @@ class WSService {
     } catch (e) {
       rethrow;
     }
-    var ping = await rpc('ping', [], Duration.zero);
-    if (ping == true) {
-      methodBus.emit('connect', {});
-    }
+    await rpc('ping', [], Duration.zero);
+    methodBus.emit('connect', {});
   }
 
   final _connectedCompleter = Completer<void>();
