@@ -33,8 +33,8 @@ class SurrealDB {
   }
 
   /// Ping SurrealDB instance
-  Future<bool> ping() async {
-    return (await _wsService.rpc('ping')) as bool;
+  Future<void> ping() async {
+    await _wsService.rpc('ping');
   }
 
   /// Switch to a specific namespace and database.
