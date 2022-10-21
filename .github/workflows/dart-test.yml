@@ -40,11 +40,13 @@ jobs:
         #with:
           #surrealdb-version: latest
           #surrealdb-port: 8000
-      - name: Run the build process with Docker
-        uses: addnab/docker-run-action@v3
-        with:
-          image: aschmelyun/cleaver:latest
-          options: -p 8000:8000 surrealdb/surrealdb:nightly start --user root --pass root
+      - name: ttt
+        run: docker run --pull --rm -d -p 8000:8000 surrealdb/surrealdb:nightly start --user root --pass root
+      #- name: Run the build process with Docker
+       # uses: addnab/docker-run-action@v3
+        #with:
+         # image: aschmelyun/cleaver:latest
+          #options: -p 8000:8000 surrealdb/surrealdb:nightly start --user root --pass root
 
       # Your project will need to have tests in test/ and a dependency on
       # package:test for this step to succeed. Note that Flutter projects will
