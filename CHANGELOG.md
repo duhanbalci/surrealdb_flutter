@@ -1,3 +1,7 @@
+## [0.4.7]
+
+- change ping return type to void for future surrealdb builds ([#4](https://github.com/duhanbalci/surrealdb_flutter/pull/4))
+
 ## [0.4.6]
 
 - fixed ([#2](https://github.com/duhanbalci/surrealdb_flutter/pull/2))
