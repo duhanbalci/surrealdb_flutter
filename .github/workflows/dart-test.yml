@@ -17,7 +17,7 @@ jobs:
 
     services:
       surreal:
-        image: surrealdb/surrealdb:latest start --user root --pass root memory
+        image: surrealdb/surrealdb:latest
         ports:
           - 8000:8000
     steps:
