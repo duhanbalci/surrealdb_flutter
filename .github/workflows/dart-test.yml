@@ -20,7 +20,7 @@ jobs:
         image: surrealdb/surrealdb:latest
         ports:
           - 8000:8000
-        options: --entrypoint "surreal start"
+        options: --entrypoint="surreal start"
 
     steps:
       - uses: actions/checkout@v3
