@@ -17,12 +17,9 @@ jobs:
 
     services:
       surreal:
-        image: surrealdb/surrealdb:latest
+        image: surrealdb/surrealdb:latest start --user root --pass root memory
         ports:
           - 8000:8000
-        options: >-
-          start
-          --user root --pass root memory
     steps:
       - uses: actions/checkout@v3
 
