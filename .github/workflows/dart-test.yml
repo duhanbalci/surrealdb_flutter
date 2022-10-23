@@ -15,6 +15,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      surreal:
+        image:surrealdb/surrealdb:latest
+        ports:
+          - 8000:8000
+        options: >-
+          start
+          --user root --pass root memory
     steps:
       - uses: actions/checkout@v3
 
@@ -34,9 +42,6 @@ jobs:
       # Consider passing '--fatal-infos' for slightly stricter analysis.
       - name: Analyze project source
         run: dart analyze
-
-      - name: ttt
-        run: docker pull surrealdb/surrealdb:nightly && docker run -d -p 8000:8000 surrealdb/surrealdb:nightly start --user root --pass root start
 
       # Your project will need to have tests in test/ and a dependency on
       # package:test for this step to succeed. Note that Flutter projects will
