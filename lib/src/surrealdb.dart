@@ -115,7 +115,14 @@ class SurrealDB {
   /// Selects all records in a table, or a specific record, from the database.
   /// @param thing - The table name or a record ID to select.
   Future<List<T>> select<T>(String table) async {
-    return ((await _wsService.rpc('select', [table])) as List).cast<T>();
+    final res = await _wsService.rpc('select', [table]);
+    if (res is List) {
+      return res.cast<T>().toList();
+    }
+    if (res is Map) {
+      return [(res as T)];
+    }
+    return [];
   }
 
   // Future<List<T>> selectTyped<T>(String table, T type) async {
