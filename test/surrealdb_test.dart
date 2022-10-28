@@ -84,4 +84,48 @@ void main() {
         person['name']['last'], (data['name'] as Map<String, dynamic>)['last']);
     expect(person['marketing'], data['marketing']);
   });
+
+  test('should select one', () async {
+    final client = SurrealDB('ws://localhost:8000/rpc');
+    client.connect();
+    await client.wait();
+    await client.use('ns', 'db');
+    await client.signin('root', 'root');
+    var data = {
+      'title': 'Founder & CEO',
+      'name': {
+        'first': 'Tobie',
+        'last': 'Morgan Hitchcock',
+      },
+      'marketing': false,
+    };
+    await client.delete('person');
+    var res = await client.create('person', data);
+    var person = (res as List)[0] as Map<String, dynamic>;
+
+    expect(person['id'], isNotNull);
+    expect(person['title'], data['title']);
+    expect(person['name']['first'],
+        (data['name'] as Map<String, dynamic>)['first']);
+    expect(
+        person['name']['last'], (data['name'] as Map<String, dynamic>)['last']);
+    expect(person['marketing'], data['marketing']);
+
+    var persons = await client.select('person');
+    expect(persons.length, 1);
+    person = persons[0] as Map<String, dynamic>;
+    expect(person['id'], isNotNull);
+    expect(person['title'], data['title']);
+    expect(person['name']['first'],
+        (data['name'] as Map<String, dynamic>)['first']);
+    expect(
+        person['name']['last'], (data['name'] as Map<String, dynamic>)['last']);
+    expect(person['marketing'], data['marketing']);
+
+    try {
+      await client.select(person['id']);
+    } catch (e) {
+      fail('exception thrown when selecting one: $e');
+    }
+  });
 }
