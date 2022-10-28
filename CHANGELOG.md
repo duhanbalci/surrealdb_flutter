@@ -1,3 +1,7 @@
+## [0.4.8]
+
+- fix: selecting single record throws exception on nightly builds ([#4](https://github.com/duhanbalci/surrealdb_flutter/pull/6))
+
 ## [0.4.7]
 
 - change ping return type to void for future surrealdb builds ([#4](https://github.com/duhanbalci/surrealdb_flutter/pull/4))
