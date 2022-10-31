@@ -12,9 +12,10 @@ class SurrealDB {
   final _wsService = WSService();
 
   /// Connects to a local or remote database endpoint.
-  /// @param url - The url of the database endpoint to connect to.
-  void connect() {
-    _wsService.connect(url);
+  ///
+  /// [globalTimeout] - The [globalTimeout] for every RPC call. Defaults to 1 minute.
+  void connect([Duration globalTimeout = const Duration(minutes: 1)]) {
+    _wsService.connect(url, globalTimeout);
     _pinger = Pinger(const Duration(seconds: 30));
     _wsService.waitConnect.then((value) => _pinger?.start(() => ping()));
     if (token != null) authenticate(token!);

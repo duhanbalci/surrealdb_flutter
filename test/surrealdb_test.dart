@@ -3,8 +3,10 @@ import 'package:test/test.dart';
 import 'package:surrealdb/surrealdb.dart';
 
 void main() {
+  const _testUrl = 'ws://localhost:8000/rpc';
+
   test('should connect & disconnect', () async {
-    final client = SurrealDB('ws://localhost:8000/rpc');
+    final client = SurrealDB(_testUrl);
     client.connect();
     await client.wait();
     client.close();
@@ -12,7 +14,7 @@ void main() {
   });
 
   test('should connect, use, signin, close', () async {
-    final client = SurrealDB('ws://localhost:8000/rpc');
+    final client = SurrealDB(_testUrl);
     client.connect();
     await client.wait();
     await client.use('ns', 'db');
@@ -22,7 +24,7 @@ void main() {
   });
 
   test('should create', () async {
-    final client = SurrealDB('ws://localhost:8000/rpc');
+    final client = SurrealDB(_testUrl);
     client.connect();
     await client.wait();
     await client.use('ns', 'db');
@@ -48,7 +50,7 @@ void main() {
   });
 
   test('should delete,select', () async {
-    final client = SurrealDB('ws://localhost:8000/rpc');
+    final client = SurrealDB(_testUrl);
     client.connect();
     await client.wait();
     await client.use('ns', 'db');
@@ -86,7 +88,7 @@ void main() {
   });
 
   test('should select one', () async {
-    final client = SurrealDB('ws://localhost:8000/rpc');
+    final client = SurrealDB(_testUrl);
     client.connect();
     await client.wait();
     await client.use('ns', 'db');
