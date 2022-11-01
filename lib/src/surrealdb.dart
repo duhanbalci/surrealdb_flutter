@@ -1,21 +1,27 @@
 import 'package:surrealdb/src/pinger.dart';
+import 'package:surrealdb/src/surrealdb_options.dart';
 
 import './ws.dart';
 
 class SurrealDB {
   final String url;
   final String? token;
+
   Pinger? _pinger;
+  late final WSService _wsService;
+  final SurrealDBOptions options;
 
-  SurrealDB(this.url, [this.token]);
-
-  final _wsService = WSService();
+  SurrealDB(
+    this.url, {
+    this.token,
+    this.options = const SurrealDBOptions(),
+  }) {
+    _wsService = WSService(url, options);
+  }
 
   /// Connects to a local or remote database endpoint.
-  ///
-  /// [globalTimeout] - The [globalTimeout] for every RPC call. Defaults to 1 minute.
-  void connect([Duration globalTimeout = const Duration(minutes: 1)]) {
-    _wsService.connect(url, globalTimeout);
+  void connect() {
+    _wsService.connect();
     _pinger = Pinger(const Duration(seconds: 30));
     _wsService.waitConnect.then((value) => _pinger?.start(() => ping()));
     if (token != null) authenticate(token!);

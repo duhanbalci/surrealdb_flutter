@@ -1,19 +1,20 @@
-import 'package:surrealdb/src/surrealdb.dart';
 import 'package:surrealdb/surrealdb.dart';
 
 void main(List<String> args) async {
-  var client = SurrealDB('ws://localhost:8000/rpc');
+  final options = SurrealDBOptions(
+    timeoutDuration: const Duration(seconds: 30),
+  );
+
+  var client = SurrealDB('ws://localhost:8000/rpc', options: options);
 
   client.connect();
   await client.wait();
-
   await client.use('test', 'test');
-
   await client.signin('root', 'root');
 
-  await client.create('person', TestModel(false, 'Title'));
+  var person = await client.create('person', TestModel(false, 'Title'));
 
-  await client.create('person', {
+  var person2 = await client.create('person', {
     'title': 'Founder & CEO',
     'name': {
       'first': 'Tobie',
@@ -22,18 +23,14 @@ void main(List<String> args) async {
     'marketing': false,
   });
 
-  await client.select('person');
+  var persons = await client.select('person');
 
-  await client.query(
+  var groupByQuery = await client.query(
     'SELECT marketing, count() FROM type::table(\$tb) GROUP BY marketing',
     {
       'tb': 'person',
     },
   );
-
-  await client.live('person');
-
-  await client.query('live select * from person');
 }
 
 class TestModel {

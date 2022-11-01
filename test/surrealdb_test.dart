@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:test/test.dart';
 
 import 'package:surrealdb/surrealdb.dart';
@@ -11,6 +13,17 @@ void main() {
     await client.wait();
     client.close();
     await Future.delayed(Duration(seconds: 1));
+  });
+
+  test('should throw timeout exception', () async {
+    final client = SurrealDB(
+      _testUrl,
+      options: SurrealDBOptions(timeoutDuration: Duration(microseconds: 1)),
+    );
+
+    client.connect();
+    await client.wait();
+    expect(() => client.ping(), throwsA(isA<TimeoutException>()));
   });
 
   test('should connect, use, signin, close', () async {

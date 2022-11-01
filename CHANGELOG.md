@@ -1,3 +1,7 @@
+## [0.5.0]
+
+- Now surrealdb has optional `options` parameter in constructor. You can set timeout duration with it for all rpc calls.
+
 ## [0.4.8]
 
 - fix: selecting single record throws exception on nightly builds ([#4](https://github.com/duhanbalci/surrealdb_flutter/pull/6))

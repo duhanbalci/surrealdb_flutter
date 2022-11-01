@@ -2,7 +2,11 @@ import 'package:surrealdb/src/surrealdb.dart';
 import 'package:surrealdb/surrealdb.dart';
 
 void main(List<String> args) async {
-  final client = SurrealDB('ws://localhost:8000/rpc');
+  final options = SurrealDBOptions(
+    timeoutDuration: const Duration(seconds: 30),
+  );
+
+  final client = SurrealDB('ws://localhost:8000/rpc', options: options);
 
   client.connect();
   await client.wait();

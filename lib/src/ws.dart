@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:surrealdb/src/event_emitter.dart';
+import 'package:surrealdb/surrealdb.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 typedef WsFunctionParam = Map<String, dynamic>;
@@ -15,21 +16,20 @@ class RpcResponse {
 }
 
 class WSService {
+  final String url;
+  final SurrealDBOptions options;
+
+  WSService(this.url, this.options);
+
   WebSocketChannel? _ws;
-  final methodBus = EventEmitter();
+  final _methodBus = EventEmitter();
 
   var _shouldReconnect = false;
   var _serial = 1;
 
   var _reconnectDuration = const Duration(milliseconds: 100);
 
-  WebSocketChannel? get ws => _ws;
-  late String url;
-  late Duration _globalTimeoutDuration;
-
-  connect(String url, Duration timeout) async {
-    this.url = url;
-    _globalTimeoutDuration = timeout;
+  connect() async {
     _shouldReconnect = true;
     try {
       _ws = WebSocketChannel.connect(Uri.parse(url));
@@ -45,7 +45,7 @@ class WSService {
           }
         },
       );
-      methodBus.once('connect', (_) async {
+      _methodBus.once('connect', (_) async {
         _connectedCompleter.complete();
         _reconnectDuration = const Duration(milliseconds: 100);
       });
@@ -53,7 +53,7 @@ class WSService {
       rethrow;
     }
     await rpc('ping', [], Duration.zero);
-    methodBus.emit('connect', {});
+    _methodBus.emit('connect', {});
   }
 
   final _connectedCompleter = Completer<void>();
@@ -81,7 +81,7 @@ class WSService {
     }
 
     try {
-      await connect(url, _globalTimeoutDuration);
+      await connect();
     } catch (e) {
       onDone();
     }
@@ -118,13 +118,14 @@ class WSService {
     );
 
     if (timeout != Duration.zero) {
-      Future.delayed(_globalTimeoutDuration, () {
+      Future.delayed(options.timeoutDuration, () {
         if (completer.isCompleted) return;
-        completer.completeError('timeout');
+        completer.completeError(TimeoutException('timeout', timeout));
       });
     }
 
-    methodBus.once<RpcResponse>(id, (rpcResponse) {
+    _methodBus.once<RpcResponse>(id, (rpcResponse) {
+      if (completer.isCompleted) return;
       if (rpcResponse.error != null) {
         completer.completeError(rpcResponse.error!);
       } else {
@@ -143,7 +144,7 @@ class WSService {
       var error = messageDecoded["error"];
       Object result = messageDecoded["result"] ?? {};
 
-      methodBus.emit(id, RpcResponse(result, error));
+      _methodBus.emit(id, RpcResponse(result, error));
     } catch (_) {
       rethrow;
     }
