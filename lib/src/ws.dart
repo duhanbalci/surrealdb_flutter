@@ -21,13 +21,15 @@ class WSService {
   var _shouldReconnect = false;
   var _serial = 1;
 
-  var reconnectDuration = const Duration(milliseconds: 100);
+  var _reconnectDuration = const Duration(milliseconds: 100);
 
   WebSocketChannel? get ws => _ws;
   late String url;
+  late Duration _globalTimeoutDuration;
 
-  connect(String url) async {
+  connect(String url, Duration timeout) async {
     this.url = url;
+    _globalTimeoutDuration = timeout;
     _shouldReconnect = true;
     try {
       _ws = WebSocketChannel.connect(Uri.parse(url));
@@ -45,7 +47,7 @@ class WSService {
       );
       methodBus.once('connect', (_) async {
         _connectedCompleter.complete();
-        reconnectDuration = const Duration(milliseconds: 100);
+        _reconnectDuration = const Duration(milliseconds: 100);
       });
     } catch (e) {
       rethrow;
@@ -71,15 +73,15 @@ class WSService {
   void onDone() async {
     if (!_shouldReconnect) return;
 
-    await Future.delayed(reconnectDuration);
+    await Future.delayed(_reconnectDuration);
 
-    reconnectDuration = reconnectDuration * 2;
-    if (reconnectDuration > const Duration(seconds: 10)) {
-      reconnectDuration = const Duration(seconds: 10);
+    _reconnectDuration = _reconnectDuration * 2;
+    if (_reconnectDuration > const Duration(seconds: 10)) {
+      _reconnectDuration = const Duration(seconds: 10);
     }
 
     try {
-      await connect(url);
+      await connect(url, _globalTimeoutDuration);
     } catch (e) {
       onDone();
     }
@@ -116,7 +118,7 @@ class WSService {
     );
 
     if (timeout != Duration.zero) {
-      Future.delayed(timeout ?? const Duration(seconds: 5), () {
+      Future.delayed(_globalTimeoutDuration, () {
         if (completer.isCompleted) return;
         completer.completeError('timeout');
       });
