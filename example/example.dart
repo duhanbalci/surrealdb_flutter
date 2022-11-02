@@ -31,6 +31,11 @@ void main(List<String> args) async {
       'tb': 'person',
     },
   );
+
+  print(person);
+  print(person2);
+  print(persons);
+  print(groupByQuery);
 }
 
 class TestModel {

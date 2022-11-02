@@ -1,4 +1,3 @@
-import 'package:surrealdb/src/surrealdb.dart';
 import 'package:surrealdb/surrealdb.dart';
 
 void main(List<String> args) async {
