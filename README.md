@@ -1,3 +1,4 @@
+[![Tests](https://github.com/willyfromtheblock/surrealdb_flutter/actions/workflows/dart-test.yml/badge.svg?branch=main)](https://github.com/willyfromtheblock/surrealdb_flutter/actions/workflows/dart-test.yml)
 # SurrealDB Client For Dart & Flutter
 
 SurrealDB client for Dart and Flutter.
