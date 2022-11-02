@@ -1,8 +1,8 @@
-class EventEmitter {
-  Map<String, List<Function>> listeners = {};
-  Map<String, List<Function>> willBeDeleted = {};
+class EventEmitter<K> {
+  Map<K, List<Function>> listeners = {};
+  Map<K, List<Function>> willBeDeleted = {};
 
-  addListener<T>(event, Function(T) fn) {
+  addListener<T>(K event, Function(T) fn) {
     listeners[event] = listeners[event] ?? [];
     listeners[event]!.add(fn);
   }
@@ -11,7 +11,7 @@ class EventEmitter {
     addListener(event, fn);
   }
 
-  once<T>(event, Function(T) fn) {
+  once<T>(K event, Function(T) fn) {
     listeners[event] = listeners[event] ?? [];
     dynamic onceWrapper;
     onceWrapper = (T data) {
@@ -22,7 +22,7 @@ class EventEmitter {
     listeners[event]!.add(onceWrapper);
   }
 
-  removeListener(event, fn) {
+  removeListener(K event, fn) {
     var list = listeners[event];
     if (list == null) return;
 
@@ -32,11 +32,11 @@ class EventEmitter {
     }
   }
 
-  off(event, fn) {
+  off(K event, fn) {
     removeListener(event, fn);
   }
 
-  emit(event, data) {
+  emit(K event, data) {
     var fns = listeners[event];
     if (fns == null) return;
     for (var f in fns) {
@@ -62,7 +62,7 @@ class EventEmitter {
     listeners.clear();
   }
 
-  void removeListenersByEvent(String event) {
+  void removeListenersByEvent(K event) {
     var lis = listeners[event];
     if (lis == null) return;
     lis.clear();

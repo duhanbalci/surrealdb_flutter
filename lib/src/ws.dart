@@ -22,10 +22,9 @@ class WSService {
   WSService(this.url, this.options);
 
   WebSocketChannel? _ws;
-  final _methodBus = EventEmitter();
+  final _methodBus = EventEmitter<String>();
 
   var _shouldReconnect = false;
-  var _serial = 1;
 
   var _reconnectDuration = const Duration(milliseconds: 100);
 
@@ -45,15 +44,12 @@ class WSService {
           }
         },
       );
-      _methodBus.once('connect', (_) async {
-        _connectedCompleter.complete();
-        _reconnectDuration = const Duration(milliseconds: 100);
-      });
     } catch (e) {
       rethrow;
     }
     await rpc('ping', [], Duration.zero);
-    _methodBus.emit('connect', {});
+    _connectedCompleter.complete();
+    _reconnectDuration = const Duration(milliseconds: 100);
   }
 
   final _connectedCompleter = Completer<void>();
@@ -87,9 +83,9 @@ class WSService {
     }
   }
 
-  getNextId() {
-    var id = _serial++;
-    return id.toString();
+  var _serial = 1;
+  String getNextId() {
+    return (_serial++).toString();
   }
 
   Future<Object?> rpc(
@@ -118,10 +114,13 @@ class WSService {
     );
 
     if (timeout != Duration.zero) {
-      Future.delayed(options.timeoutDuration, () {
-        if (completer.isCompleted) return;
-        completer.completeError(TimeoutException('timeout', timeout));
-      });
+      Future.delayed(
+        options.timeoutDuration,
+        () {
+          if (completer.isCompleted) return;
+          completer.completeError(TimeoutException('timeout', timeout));
+        },
+      );
     }
 
     _methodBus.once<RpcResponse>(id, (rpcResponse) {
