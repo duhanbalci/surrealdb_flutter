@@ -1,4 +1,5 @@
 [![Tests](https://github.com/duhanbalci/surrealdb_flutter/actions/workflows/dart-test.yml/badge.svg?branch=main)](https://github.com/duhanbalci/surrealdb_flutter/actions/workflows/dart-test.yml)
+
 # SurrealDB Client For Dart & Flutter
 
 SurrealDB client for Dart and Flutter.
@@ -14,7 +15,7 @@ void main(List<String> args) async {
   client.connect();
   await client.wait();
   await client.use('test', 'test');
-  await client.signin('root', 'root');
+  await client.signin(user: 'root', pass: 'root');
 
   await client.create('person', TestModel(false, 'title'));
 

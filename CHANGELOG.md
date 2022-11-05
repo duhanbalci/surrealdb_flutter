@@ -1,3 +1,7 @@
+## [0.6.0]
+
+- **Breaking:** `signin` and `signup` methods parameters are now named parameters for supporting scope authentication. Now you can pass `namespace`,`database`,`scope` and `extra` parameters to `signin` and `signup` methods. `extra` parameter is `Map` type and everyting you put in this map will be sent to server.
+
 ## [0.5.0]
 
 - Now surrealdb has optional `options` parameter in constructor. You can set timeout duration with it for all rpc calls.

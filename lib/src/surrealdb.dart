@@ -58,21 +58,51 @@ class SurrealDB {
   }
 
   /// Signs up to a specific authentication scope.
-  /// @param vars - Variables used in a signup query.
+  ///
+  /// [extra] - can be used for scope authentication
   /// @return The authenication token.
-  Future<String> signup(String user, String pass) async {
+  Future<String> signup({
+    String? user,
+    String? pass,
+    String? namespace,
+    String? database,
+    String? scope,
+    Map<String, Object?>? extra,
+  }) async {
+    var object = <String, Object?>{};
+    if (user != null) object['user'] = user;
+    if (pass != null) object['pass'] = pass;
+    if (namespace != null) object['namespace'] = namespace;
+    if (database != null) object['database'] = database;
+    if (scope != null) object['scope'] = scope;
+    if (extra != null) object.addAll(extra);
+
     return (await _wsService.rpc('signup', [
       {'user': user, 'pass': pass}
     ])) as String;
   }
 
   /// Signs in to a specific authentication scope.
-  /// @param vars - Variables used in a signin query.
+  ///
+  /// [extra] - can be used for scope authentication
   /// @return The authenication token.
-  Future<Object?> signin(String user, String pass) {
-    return _wsService.rpc('signin', [
-      {'user': user, 'pass': pass}
-    ]);
+  Future<Object?> signin({
+    String? user,
+    String? pass,
+    String? namespace,
+    String? database,
+    String? scope,
+    Map<String, Object?>? extra,
+  }) {
+    var object = <String, Object?>{};
+    if (user != null) object['user'] = user;
+    if (pass != null) object['pass'] = pass;
+    if (namespace != null) object['namespace'] = namespace;
+    if (database != null) object['database'] = database;
+    if (scope != null) object['scope'] = scope;
+    if (extra != null) object.addAll(extra);
+
+    return _wsService.rpc('signin', [object]);
   }
 
   /// Invalidates the authentication for the current connection.

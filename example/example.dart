@@ -10,7 +10,7 @@ void main(List<String> args) async {
   client.connect();
   await client.wait();
   await client.use('test', 'test');
-  await client.signin('root', 'root');
+  await client.signin(user: 'root', pass: 'root');
 
   var person = await client.create('person', TestModel(false, 'Title'));
 

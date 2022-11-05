@@ -20,7 +20,7 @@ void main() {
     client.connect();
     await client.wait();
     await client.use('ns', 'db');
-    await client.signin('root', 'root');
+    await client.signin(user: 'root', pass: 'root');
     client.close();
     await Future.delayed(Duration(seconds: 1));
   });
@@ -30,7 +30,7 @@ void main() {
     client.connect();
     await client.wait();
     await client.use('ns', 'db');
-    await client.signin('root', 'root');
+    await client.signin(user: 'root', pass: 'root');
     var data = {
       'title': 'Founder & CEO',
       'name': {
@@ -56,7 +56,7 @@ void main() {
     client.connect();
     await client.wait();
     await client.use('ns', 'db');
-    await client.signin('root', 'root');
+    await client.signin(user: 'root', pass: 'root');
     var data = {
       'title': 'Founder & CEO',
       'name': {
@@ -94,7 +94,7 @@ void main() {
     client.connect();
     await client.wait();
     await client.use('ns', 'db');
-    await client.signin('root', 'root');
+    await client.signin(user: 'root', pass: 'root');
     var data = {
       'title': 'Founder & CEO',
       'name': {

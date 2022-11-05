@@ -1,6 +1,6 @@
 name: surrealdb
 description: SurrealDB client written in pure dart. Auto reconnect, Typed functions
-version: 0.5.0
+version: 0.6.0
 repository: https://github.com/duhanbalci/surrealdb_flutter
 
 environment:
