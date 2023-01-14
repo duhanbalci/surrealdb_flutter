@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:surrealdb/src/event_emitter.dart';
 import 'package:surrealdb/surrealdb.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/status.dart' as status;
 
 typedef WsFunctionParam = Map<String, dynamic>;
 typedef WsFunction = void Function(WsFunctionParam);
@@ -46,24 +47,21 @@ class WSService {
       );
     } catch (e) {
       rethrow;
+    } finally {
+      _reconnectDuration = const Duration(milliseconds: 100);
     }
-    await rpc('ping', [], Duration.zero);
-    _connectedCompleter.complete();
-    _reconnectDuration = const Duration(milliseconds: 100);
   }
 
-  final _connectedCompleter = Completer<void>();
-  Future<void> get waitConnect => _connectedCompleter.future;
+  Future<void> get waitConnect => _ws!.ready;
 
   disconnect() {
     _shouldReconnect = false;
-    _ws?.sink.close(1000, 'logout');
+    _ws?.sink.close(status.normalClosure);
     _ws = null;
   }
 
   reconnect() async {
-    _ws?.sink.close(1000, 'logout');
-    // _ws = null;
+    _ws?.sink.close(status.normalClosure);
   }
 
   void onDone() async {
