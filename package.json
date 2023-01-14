@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "events": "^3.3.0"
+  },
+  "devDependencies": {
+    "@types/events": "^3.0.0"
+  }
+}
