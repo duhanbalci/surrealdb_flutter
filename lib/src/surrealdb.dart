@@ -95,9 +95,9 @@ class SurrealDB {
     var object = <String, Object?>{};
     if (user != null) object['user'] = user;
     if (pass != null) object['pass'] = pass;
-    if (namespace != null) object['namespace'] = namespace;
-    if (database != null) object['database'] = database;
-    if (scope != null) object['scope'] = scope;
+    if (namespace != null) object['NS'] = namespace;
+    if (database != null) object['DB'] = database;
+    if (scope != null) object['SC'] = scope;
     if (extra != null) object.addAll(extra);
 
     return _wsService.rpc('signin', [object]);
