@@ -1,3 +1,7 @@
+## [0.6.2]
+
+- Fixed signin command to use namespace, database and scope parameters
+
 ## [0.6.1]
 
 - Fixed signup command to use proper params ([#12](https://github.com/duhanbalci/surrealdb_flutter/pull/12))
