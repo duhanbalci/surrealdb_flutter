@@ -1,29 +1,31 @@
-class EventEmitter<K> {
-  Map<K, List<Function>> listeners = {};
-  Map<K, List<Function>> willBeDeleted = {};
+import 'package:surrealdb/src/constants.dart';
 
-  addListener<T>(K event, Function(T) fn) {
+class EventEmitter<K> {
+  Map<K, List<VoidCallback<dynamic>>> listeners = {};
+  Map<K, List<VoidCallback<dynamic>>> willBeDeleted = {};
+
+  void addListener<T>(K event, VoidCallback<T> fn) {
     listeners[event] = listeners[event] ?? [];
-    listeners[event]!.add(fn);
+    listeners[event]!.add(fn as VoidCallback<dynamic>);
   }
 
-  on<T>(event, Function(T) fn) {
+  void on<T>(K event, VoidCallback<T> fn) {
     addListener(event, fn);
   }
 
-  once<T>(K event, Function(T) fn) {
+  void once<T>(K event, VoidCallback<T> fn) {
     listeners[event] = listeners[event] ?? [];
-    dynamic onceWrapper;
-    onceWrapper = (T data) {
-      fn(data);
+    var onceWrapper = (_) {};
+    onceWrapper = (dynamic data) {
+      fn(data as T);
       willBeDeleted[event] = willBeDeleted[event] ?? [];
       willBeDeleted[event]!.add(onceWrapper);
     };
     listeners[event]!.add(onceWrapper);
   }
 
-  removeListener(K event, fn) {
-    var list = listeners[event];
+  void removeListener<T>(K event, VoidCallback<T> fn) {
+    final list = listeners[event];
     if (list == null) return;
 
     list.removeWhere((e) => e == fn);
@@ -32,14 +34,14 @@ class EventEmitter<K> {
     }
   }
 
-  off(K event, fn) {
+  void off<T>(K event, VoidCallback<T> fn) {
     removeListener(event, fn);
   }
 
-  emit(K event, data) {
-    var fns = listeners[event];
+  void emit<T>(K event, T data) {
+    final fns = listeners[event];
     if (fns == null) return;
-    for (var f in fns) {
+    for (final f in fns) {
       try {
         f(data);
       } catch (e) {
@@ -49,13 +51,14 @@ class EventEmitter<K> {
     processWillBeDeleted();
   }
 
-  processWillBeDeleted() {
-    willBeDeleted.forEach((event, fns) {
-      for (var fn in fns) {
-        removeListener(event, fn);
-      }
-    });
-    willBeDeleted.clear();
+  void processWillBeDeleted() {
+    willBeDeleted
+      ..forEach((event, fns) {
+        for (final fn in fns) {
+          removeListener(event, fn);
+        }
+      })
+      ..clear();
   }
 
   void removeAllListener() {
@@ -63,7 +66,7 @@ class EventEmitter<K> {
   }
 
   void removeListenersByEvent(K event) {
-    var lis = listeners[event];
+    final lis = listeners[event];
     if (lis == null) return;
     lis.clear();
   }

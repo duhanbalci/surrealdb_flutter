@@ -3,24 +3,22 @@ import 'dart:convert';
 
 import 'package:surrealdb/src/event_emitter.dart';
 import 'package:surrealdb/surrealdb.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 typedef WsFunctionParam = Map<String, dynamic>;
 typedef WsFunction = void Function(WsFunctionParam);
 
 class RpcResponse {
+  RpcResponse(this.data, this.error);
   final Object data;
   final Object? error;
-
-  RpcResponse(this.data, this.error);
 }
 
 class WSService {
+  WSService(this.url, this.options);
   final String url;
   final SurrealDBOptions options;
-
-  WSService(this.url, this.options);
 
   WebSocketChannel? _ws;
   final _methodBus = EventEmitter<String>();
@@ -29,15 +27,15 @@ class WSService {
 
   var _reconnectDuration = const Duration(milliseconds: 100);
 
-  connect() async {
+  Future<void> connect() async {
     _shouldReconnect = true;
     try {
       _ws = WebSocketChannel.connect(Uri.parse(url));
       _ws!.stream.listen(
-        (event) => _handleMessage(event),
+        _handleMessage,
         cancelOnError: true,
         onDone: onDone,
-        onError: (e) {
+        onError: (Object? e) {
           if (e is WebSocketChannelException) {
             onDone();
           } else {
@@ -54,20 +52,20 @@ class WSService {
 
   Future<void> get waitConnect => _ws!.ready;
 
-  disconnect() {
+  void disconnect() {
     _shouldReconnect = false;
     _ws?.sink.close(status.normalClosure);
     _ws = null;
   }
 
-  reconnect() async {
-    _ws?.sink.close(status.normalClosure);
+  Future<void> reconnect() async {
+    await _ws?.sink.close(status.normalClosure);
   }
 
-  void onDone() async {
+  Future<void> onDone() async {
     if (!_shouldReconnect) return;
 
-    await Future.delayed(_reconnectDuration);
+    await Future<dynamic>.delayed(_reconnectDuration);
 
     _reconnectDuration = _reconnectDuration * 2;
     if (_reconnectDuration > const Duration(seconds: 10)) {
@@ -77,7 +75,7 @@ class WSService {
     try {
       await connect();
     } catch (e) {
-      onDone();
+      await onDone();
     }
   }
 
@@ -99,14 +97,14 @@ class WSService {
       return (completer..completeError('websocket not connected')).future;
     }
 
-    var id = getNextId();
+    final id = getNextId();
 
     ws.sink.add(
       jsonEncode(
         {
-          "method": method,
-          "id": id,
-          "params": data,
+          'method': method,
+          'id': id,
+          'params': data,
         },
       ),
     );
@@ -133,13 +131,14 @@ class WSService {
     return completer.future;
   }
 
-  void _handleMessage(String message) async {
+  Future<void> _handleMessage(dynamic message) async {
     try {
-      var messageDecoded = json.decode(message) as Map<String, dynamic>;
-
-      var id = messageDecoded["id"];
-      var error = messageDecoded["error"];
-      Object result = messageDecoded["result"] ?? {};
+      final messageDecoded =
+          json.decode(message as String) as Map<String, dynamic>;
+      final id = messageDecoded['id'] as String;
+      final error = messageDecoded['error'];
+      final result =
+          (messageDecoded['result'] ?? <dynamic, dynamic>{}) as Object;
 
       _methodBus.emit(id, RpcResponse(result, error));
     } catch (_) {

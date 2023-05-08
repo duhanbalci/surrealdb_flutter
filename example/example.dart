@@ -1,20 +1,22 @@
+// ignore_for_file: avoid_print
+
 import 'package:surrealdb/surrealdb.dart';
 
 void main(List<String> args) async {
-  final options = SurrealDBOptions(
-    timeoutDuration: const Duration(seconds: 30),
-  );
+  const options = SurrealDBOptions();
 
-  var client = SurrealDB('ws://localhost:8000/rpc', options: options);
-
-  client.connect();
+  final client = SurrealDB('ws://localhost:8000/rpc', options: options)
+    ..connect();
   await client.wait();
   await client.use('test', 'test');
   await client.signin(user: 'root', pass: 'root');
 
-  var person = await client.create('person', TestModel(false, 'Title'));
+  final person = await client.create(
+    'person',
+    TestModel(marketing: false, title: 'Title'),
+  );
 
-  var person2 = await client.create('person', {
+  final person2 = await client.create('person', {
     'title': 'Founder & CEO',
     'name': {
       'first': 'Tobie',
@@ -23,10 +25,10 @@ void main(List<String> args) async {
     'marketing': false,
   });
 
-  var persons = await client.select('person');
+  final persons = await client.select<Map<String, dynamic>>('person');
 
-  var groupByQuery = await client.query(
-    'SELECT marketing, count() FROM type::table(\$tb) GROUP BY marketing',
+  final groupByQuery = await client.query(
+    r'SELECT marketing, count() FROM type::table($tb) GROUP BY marketing',
     {
       'tb': 'person',
     },
@@ -36,19 +38,23 @@ void main(List<String> args) async {
   print(person2);
   print(persons);
   print(groupByQuery);
+  client.close();
 }
 
 class TestModel {
+  TestModel({required this.marketing, required this.title});
+
+  factory TestModel.fromJson(Map<String, dynamic> json) {
+    return TestModel(
+      marketing: json['marketing'] as bool,
+      title: json['title'] as String,
+    );
+  }
+
   final bool marketing;
   final String title;
 
-  TestModel(this.marketing, this.title);
-
-  static fromJson(Map<String, dynamic> json) {
-    return TestModel(json['marketing'], json['title']);
-  }
-
-  toJson() {
+  Map<String, Object> toJson() {
     return {
       'marketing': marketing,
       'title': title,

@@ -1,16 +1,9 @@
+import 'package:surrealdb/src/constants.dart';
 import 'package:surrealdb/src/pinger.dart';
 import 'package:surrealdb/src/surrealdb_options.dart';
-
-import './ws.dart';
+import 'package:surrealdb/src/ws.dart';
 
 class SurrealDB {
-  final String url;
-  final String? token;
-
-  Pinger? _pinger;
-  late final WSService _wsService;
-  final SurrealDBOptions options;
-
   SurrealDB(
     this.url, {
     this.token,
@@ -18,12 +11,18 @@ class SurrealDB {
   }) {
     _wsService = WSService(url, options);
   }
+  final String url;
+  final String? token;
+
+  Pinger? _pinger;
+  late final WSService _wsService;
+  final SurrealDBOptions options;
 
   /// Connects to a local or remote database endpoint.
   void connect() {
     _wsService.connect();
     _pinger = Pinger(const Duration(seconds: 30));
-    _wsService.waitConnect.then((value) => _pinger?.start(() => ping()));
+    _wsService.waitConnect.then((value) => _pinger?.start(ping));
     if (token != null) authenticate(token!);
   }
 
@@ -48,13 +47,13 @@ class SurrealDB {
   /// @param ns - Switches to a specific namespace.
   /// @param db - Switches to a specific database.
   Future<void> use(String ns, String db) {
-    return _wsService.rpc('use', [ns, db]);
+    return _wsService.rpc(Methods.use, [ns, db]);
   }
 
   /// Retreive info about the current Surreal instance
   /// @return Returns nothing!
   Future<Object?> info() {
-    return _wsService.rpc('info');
+    return _wsService.rpc(Methods.info);
   }
 
   /// Signs up to a specific authentication scope.
@@ -69,15 +68,16 @@ class SurrealDB {
     String? scope,
     Map<String, Object?>? extra,
   }) async {
-    var object = <String, Object?>{};
-    if (user != null) object['user'] = user;
-    if (pass != null) object['pass'] = pass;
-    if (namespace != null) object['NS'] = namespace;
-    if (database != null) object['DB'] = database;
-    if (scope != null) object['SC'] = scope;
-    if (extra != null) object.addAll(extra);
+    final object = <String, Object?>{
+      if (user != null) 'user': user,
+      if (pass != null) 'pass': pass,
+      if (namespace != null) 'NS': namespace,
+      if (database != null) 'DB': database,
+      if (scope != null) 'SC': scope,
+      if (extra != null) ...extra
+    };
 
-    return (await _wsService.rpc('signup', [object])) as String;
+    return (await _wsService.rpc(Methods.signup, [object]) ?? '') as String;
   }
 
   /// Signs in to a specific authentication scope.
@@ -92,39 +92,40 @@ class SurrealDB {
     String? scope,
     Map<String, Object?>? extra,
   }) {
-    var object = <String, Object?>{};
-    if (user != null) object['user'] = user;
-    if (pass != null) object['pass'] = pass;
-    if (namespace != null) object['NS'] = namespace;
-    if (database != null) object['DB'] = database;
-    if (scope != null) object['SC'] = scope;
-    if (extra != null) object.addAll(extra);
+    final object = <String, Object?>{
+      if (user != null) 'user': user,
+      if (pass != null) 'pass': pass,
+      if (namespace != null) 'NS': namespace,
+      if (database != null) 'DB': database,
+      if (scope != null) 'SC': scope,
+      if (extra != null) ...extra
+    };
 
-    return _wsService.rpc('signin', [object]);
+    return _wsService.rpc(Methods.signin, [object]);
   }
 
   /// Invalidates the authentication for the current connection.
   Future<void> invalidate() {
-    return _wsService.rpc('invalidate');
+    return _wsService.rpc(Methods.invalidate);
   }
 
   /// Authenticates the current connection with a JWT token.
   /// @param token - The JWT authentication token.
   Future<void> authenticate(String token) {
-    return _wsService.rpc('authenticate', [token]);
+    return _wsService.rpc(Methods.authenticate, [token]);
   }
 
   /// Kill a specific query.
   /// @param query - The query to kill.
   Future<void> kill(String query) {
-    return _wsService.rpc('kill', [query]);
+    return _wsService.rpc(Methods.kill, [query]);
   }
 
   /// Assigns a value as a parameter for this connection.
   /// @param key - Specifies the name of the variable.
   /// @param val - Assigns the value to the variable name.
   Future<String> let(String key, String val) async {
-    return (await _wsService.rpc('let', [key, val])) as String;
+    return (await _wsService.rpc(Methods.let, [key, val]) ?? '') as String;
   }
 
   /// Creates a record in the database.
@@ -132,13 +133,18 @@ class SurrealDB {
   /// @param data - The document / record data to insert (should json encodable object or Class has toJson method).
   Future<Object?> create(String thing, dynamic data) async {
     try {
-      return await _wsService.rpc('create', [
+      return await _wsService.rpc(Methods.create, [
         thing,
+        // ignore: avoid_dynamic_calls
         data.toJson(),
       ]);
-    } on NoSuchMethodError catch (_) {}
+    } catch (e) {
+      if (e is! NoSuchMethodError) {
+        rethrow;
+      }
+    }
     try {
-      return await _wsService.rpc('create', [
+      return await _wsService.rpc(Methods.create, [
         thing,
         data,
       ]);
@@ -150,7 +156,7 @@ class SurrealDB {
   /// Selects all records in a table, or a specific record, from the database.
   /// @param thing - The table name or a record ID to select.
   Future<List<T>> select<T>(String table) async {
-    final res = await _wsService.rpc('select', [table]);
+    final res = await _wsService.rpc(Methods.select, [table]);
     if (res is List) {
       return res.cast<T>().toList();
     }
@@ -163,7 +169,7 @@ class SurrealDB {
   // Future<List<T>> selectTyped<T>(String table, T type) async {
   //   try {
   //     // call fromjson method from generic type
-  //     var res = await _wsService.rpc('select', [table]);
+  //     var res = await _wsService.rpc(Method.select, [table]);
   //     if (res is List) {
   //       return res.map((e) => (type as dynamic).fromJson(e)).toList()
   //           as List<T>;
@@ -182,7 +188,7 @@ class SurrealDB {
     String query, [
     Map<String, Object?>? vars,
   ]) async {
-    return await _wsService.rpc('query', [
+    return _wsService.rpc(Methods.query, [
       query,
       if (vars != null) vars,
     ]);
@@ -197,7 +203,7 @@ class SurrealDB {
     String thing, [
     Object? data,
   ]) {
-    return _wsService.rpc('update', [thing, data]);
+    return _wsService.rpc(Methods.update, [thing, data]);
   }
 
   /// Modifies all records in a table, or a specific record, in the database.
@@ -209,10 +215,11 @@ class SurrealDB {
     String thing, [
     Object? data,
   ]) {
-    return _wsService.rpc('update', [thing, data]);
+    return _wsService.rpc(Methods.update, [thing, data]);
   }
 
-  /// Applies JSON Patch changes to all records, or a specific record, in the database.
+  /// Applies JSON Patch changes to all records,
+  /// or a specific record, in the database.
   ///
   /// ***NOTE: This function patches the current document / record data with the specified JSON Patch data.***
   /// @param thing - The table name or the specific record ID to modify.
@@ -221,13 +228,13 @@ class SurrealDB {
     String thing, [
     Object? data,
   ]) {
-    return _wsService.rpc('modify', [thing, data]);
+    return _wsService.rpc(Methods.modify, [thing, data]);
   }
 
   /// Deletes all records in a table, or a specific record, from the database
   /// [thing] is the table name or the record id
   Future<void> delete(String thing) {
-    return _wsService.rpc('delete', [thing]);
+    return _wsService.rpc(Methods.delete, [thing]);
   }
 
   /// Subscribe to a table
@@ -235,7 +242,7 @@ class SurrealDB {
     String query, [
     Map<String, Object?>? vars,
   ]) async {
-    return await _wsService.rpc('live', [
+    return _wsService.rpc(Methods.live, [
       query,
       if (vars != null) vars,
     ]);
