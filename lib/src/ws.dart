@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:surrealdb/src/event_emitter.dart';
+import 'package:surrealdb/src/utils.dart';
 import 'package:surrealdb/surrealdb.dart';
 import 'package:web_socket_channel/status.dart' as status;
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -30,19 +31,16 @@ class WSService {
   Future<void> connect() async {
     _shouldReconnect = true;
     try {
-      _ws = WebSocketChannel.connect(Uri.parse(url));
-      _ws!.stream.listen(
-        _handleMessage,
-        cancelOnError: true,
-        onDone: onDone,
-        onError: (Object? e) {
-          if (e is WebSocketChannelException) {
-            onDone();
-          } else {
-            onDone();
-          }
-        },
-      );
+      _ws = WebSocketChannel.connect(Uri.parse(url))
+        ..stream
+            .where((event) => event is String)
+            .map((event) => jsonDecode(event as String) as Map<String, dynamic>)
+            .listen(
+              _handleMessage,
+              cancelOnError: true,
+              onDone: onDone,
+              onError: (_) => onDone,
+            );
     } catch (e) {
       rethrow;
     } finally {
@@ -65,7 +63,7 @@ class WSService {
   Future<void> onDone() async {
     if (!_shouldReconnect) return;
 
-    await Future<dynamic>.delayed(_reconnectDuration);
+    await sleep(_reconnectDuration);
 
     _reconnectDuration = _reconnectDuration * 2;
     if (_reconnectDuration > const Duration(seconds: 10)) {
@@ -131,16 +129,18 @@ class WSService {
     return completer.future;
   }
 
-  Future<void> _handleMessage(dynamic message) async {
+  Future<void> _handleMessage(Map<String, dynamic> data) async {
     try {
-      final messageDecoded =
-          json.decode(message as String) as Map<String, dynamic>;
-      final id = messageDecoded['id'] as String;
-      final error = messageDecoded['error'];
-      final result =
-          (messageDecoded['result'] ?? <dynamic, dynamic>{}) as Object;
-
-      _methodBus.emit(id, RpcResponse(result, error));
+      if (data
+          case {
+            'id': final String id,
+            'result': Object? result,
+          }) {
+        result ??= {};
+        _methodBus.emit(id, RpcResponse(result, data['error']));
+      } else {
+        throw Exception('invalid message');
+      }
     } catch (_) {
       rethrow;
     }

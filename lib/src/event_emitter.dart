@@ -9,21 +9,6 @@ class EventEmitter<K> {
     listeners[event]!.add(fn as VoidCallback<dynamic>);
   }
 
-  void on<T>(K event, VoidCallback<T> fn) {
-    addListener(event, fn);
-  }
-
-  void once<T>(K event, VoidCallback<T> fn) {
-    listeners[event] = listeners[event] ?? [];
-    var onceWrapper = (_) {};
-    onceWrapper = (dynamic data) {
-      fn(data as T);
-      willBeDeleted[event] = willBeDeleted[event] ?? [];
-      willBeDeleted[event]!.add(onceWrapper);
-    };
-    listeners[event]!.add(onceWrapper);
-  }
-
   void removeListener<T>(K event, VoidCallback<T> fn) {
     final list = listeners[event];
     if (list == null) return;
@@ -34,8 +19,18 @@ class EventEmitter<K> {
     }
   }
 
-  void off<T>(K event, VoidCallback<T> fn) {
-    removeListener(event, fn);
+  void on<T>(K event, VoidCallback<T> fn) => addListener(event, fn);
+
+  void off<T>(K event, VoidCallback<T> fn) => removeListener(event, fn);
+
+  void once<T>(K event, VoidCallback<T> fn) {
+    var onceWrapper = (_) {};
+    onceWrapper = (dynamic data) {
+      fn(data as T);
+      willBeDeleted[event] = willBeDeleted[event] ?? [];
+      willBeDeleted[event]!.add(onceWrapper);
+    };
+    addListener(event, onceWrapper);
   }
 
   void emit<T>(K event, T data) {
@@ -66,8 +61,6 @@ class EventEmitter<K> {
   }
 
   void removeListenersByEvent(K event) {
-    final lis = listeners[event];
-    if (lis == null) return;
-    lis.clear();
+    listeners[event]?.clear();
   }
 }

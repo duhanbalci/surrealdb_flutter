@@ -20,10 +20,14 @@ class SurrealDB {
 
   /// Connects to a local or remote database endpoint.
   void connect() {
-    _wsService.connect();
-    _pinger = Pinger(const Duration(seconds: 30));
-    _wsService.waitConnect.then((value) => _pinger?.start(ping));
-    if (token != null) authenticate(token!);
+    try {
+      _wsService.connect();
+      _pinger = Pinger(const Duration(seconds: 30));
+      _wsService.waitConnect.then((value) => _pinger?.start(ping));
+      if (token != null) authenticate(token!);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// Closes the persistent connection to the database.
