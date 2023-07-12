@@ -3,9 +3,11 @@ import 'package:uuid/uuid.dart';
 Future<void> sleep(Duration duration) => Future.delayed(duration);
 
 String parseUuid(dynamic input) {
-  return switch (input.runtimeType) {
-    const (List<dynamic>) => Uuid.unparse(List<int>.from(input as List)),
-    String => input,
-    _ => throw Exception('Uuid parsing failed')
-  } as String;
+  if (input is List) {
+    return Uuid.unparse(List<int>.from(input));
+  } else if (input is String) {
+    return input;
+  } else {
+    throw Exception('Uuid parsing failed');
+  }
 }
