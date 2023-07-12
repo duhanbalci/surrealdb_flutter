@@ -4,6 +4,9 @@ class RpcResponse {
   RpcResponse(this.data, this.error);
   final Object data;
   final Object? error;
+
+  @override
+  String toString() => 'RpcResponse{data: $data, error: $error}';
 }
 
 class LiveQueryResponse {
@@ -17,18 +20,6 @@ class LiveQueryResponse {
   final LiveQueryClosureReason? detail;
 
   @override
-  String toString() {
-    return 'LiveQueryResponse{action: $action, result: $result, detail: $detail}';
-  }
+  String toString() =>
+      'LiveQueryResponse{action: $action, result: $result, detail: $detail}';
 }
-
-// class UnprocessedLiveQueryResponse extends LiveQueryResponse {
-//   UnprocessedLiveQueryResponse({
-//     required super.action,
-//     required this.query,
-//     super.detail,
-//     super.result,
-//   });
-
-//   final String query;
-// }

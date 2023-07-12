@@ -2,10 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:surrealdb/src/common/constants.dart';
-import 'package:surrealdb/src/common/models.dart';
 import 'package:surrealdb/src/event_emitter.dart';
-import 'package:surrealdb/src/utils.dart';
 import 'package:surrealdb/surrealdb.dart';
 import 'package:web_socket_channel/status.dart' as status;
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -148,7 +145,7 @@ class WSService {
             'result': {
               'id': dynamic _,
               'action': String _,
-              'result': Map<String, dynamic> _,
+              'result': Object? _,
             }
           }) {
         _handleLiveBatch(data['result'] as Map<String, dynamic>);
@@ -174,7 +171,7 @@ class WSService {
     }
   }
 
-  void _handleLiveBatch(Map<String, dynamic> data) {
+  void _handleLiveBatch(Object? data) {
     try {
       if (data
           case {
