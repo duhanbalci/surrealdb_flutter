@@ -1,4 +1,5 @@
-import 'package:surrealdb/src/constants.dart';
+import 'package:surrealdb/src/common/constants.dart';
+import 'package:surrealdb/src/common/models.dart';
 import 'package:surrealdb/src/pinger.dart';
 import 'package:surrealdb/src/surrealdb_options.dart';
 import 'package:surrealdb/src/ws.dart';
@@ -121,8 +122,9 @@ class SurrealDB {
 
   /// Kill a specific query.
   /// @param query - The query to kill.
-  Future<void> kill(String query) {
-    return _wsService.rpc(Methods.kill, [query]);
+  Future<void> kill(String query) async {
+    await _wsService.rpc(Methods.kill, ["'$query'"]);
+    _wsService.kill(query);
   }
 
   /// Assigns a value as a parameter for this connection.
@@ -250,5 +252,13 @@ class SurrealDB {
       query,
       if (vars != null) vars,
     ]);
+  }
+
+  /// Add callback to an live query
+  void listenLive(
+    String queryUuid,
+    void Function(LiveQueryResponse) callback,
+  ) {
+    _wsService.listenLive(queryUuid, callback);
   }
 }

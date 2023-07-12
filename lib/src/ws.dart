@@ -1,6 +1,9 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:surrealdb/src/common/constants.dart';
+import 'package:surrealdb/src/common/models.dart';
 import 'package:surrealdb/src/event_emitter.dart';
 import 'package:surrealdb/src/utils.dart';
 import 'package:surrealdb/surrealdb.dart';
@@ -10,12 +13,6 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 typedef WsFunctionParam = Map<String, dynamic>;
 typedef WsFunction = void Function(WsFunctionParam);
 
-class RpcResponse {
-  RpcResponse(this.data, this.error);
-  final Object data;
-  final Object? error;
-}
-
 class WSService {
   WSService(this.url, this.options);
   final String url;
@@ -23,6 +20,9 @@ class WSService {
 
   WebSocketChannel? _ws;
   final _methodBus = EventEmitter<String>();
+
+  final _liveQueue = EventEmitter<String>();
+  final Map<String, List<LiveQueryResponse>> _unProcessedLiveQueue = {};
 
   var _shouldReconnect = false;
 
@@ -61,6 +61,18 @@ class WSService {
   }
 
   Future<void> onDone() async {
+    // Socket closed
+    _liveQueue.listeners.forEach((key, value) {
+      _liveQueue.emit(
+          key,
+          LiveQueryResponse(
+            action: LiveQueryAction.close,
+            detail: LiveQueryClosureReason.socketClosed,
+          ));
+    });
+
+    _liveQueue.removeAllListener();
+
     if (!_shouldReconnect) return;
 
     await sleep(_reconnectDuration);
@@ -133,16 +145,100 @@ class WSService {
     try {
       if (data
           case {
+            'result': {
+              'id': dynamic _,
+              'action': String _,
+              'result': Map<String, dynamic> _,
+            }
+          }) {
+        _handleLiveBatch(data['result'] as Map<String, dynamic>);
+      } else if (data
+          case {
             'id': final String id,
             'result': Object? result,
           }) {
         result ??= {};
         _methodBus.emit(id, RpcResponse(result, data['error']));
+      } else if (data
+          case {
+            'id': final String id,
+            'error': Object? error,
+          }) {
+        error ??= {};
+        _methodBus.emit(id, RpcResponse(error, error));
       } else {
         throw Exception('invalid message');
       }
     } catch (_) {
       rethrow;
     }
+  }
+
+  void _handleLiveBatch(Map<String, dynamic> data) {
+    try {
+      if (data
+          case {
+            'id': final dynamic id,
+            'action': final String action,
+            'result': Object? result,
+          }) {
+        result ??= {};
+        final uuid = parseUuid(id);
+        if (_liveQueue.listeners.containsKey(uuid)) {
+          if (result is List) {
+            result.map(
+              (e) => _liveQueue.emit(
+                uuid,
+                LiveQueryResponse(
+                    action: LiveQueryAction.fromText(action), result: e),
+              ),
+            );
+          } else {
+            _liveQueue.emit(
+              uuid,
+              LiveQueryResponse(
+                  action: LiveQueryAction.fromText(action), result: result),
+            );
+          }
+        } else {
+          _unProcessedLiveQueue.putIfAbsent(uuid, () => []);
+          _unProcessedLiveQueue[id]!.add(
+            LiveQueryResponse(
+              action: LiveQueryAction.fromText(action),
+              result: result,
+            ),
+          );
+        }
+      } else {
+        throw Exception('invalid live message');
+      }
+    } catch (_) {
+      rethrow;
+    }
+  }
+
+  void listenLive(
+    String queryUuid,
+    void Function(LiveQueryResponse) cb,
+  ) {
+    _liveQueue.addListener(
+        queryUuid, (dynamic e) => cb(e as LiveQueryResponse));
+    if (_unProcessedLiveQueue.containsKey(queryUuid)) {
+      _unProcessedLiveQueue[queryUuid]!
+          .map((e) => _liveQueue.emit(queryUuid, e));
+      _unProcessedLiveQueue.remove(queryUuid);
+    }
+  }
+
+  void kill(String queryUuid) {
+    _liveQueue
+      ..emit(
+        queryUuid,
+        LiveQueryResponse(
+          action: LiveQueryAction.close,
+          detail: LiveQueryClosureReason.queryKilled,
+        ),
+      )
+      ..removeListenersByEvent(queryUuid);
   }
 }
