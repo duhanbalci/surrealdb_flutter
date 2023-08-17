@@ -4,7 +4,7 @@ import 'package:surrealdb/surrealdb.dart';
 import 'package:test/test.dart';
 
 void main() {
-  const testUrl = 'ws://localhost:8000/rpc';
+  const testUrl = 'ws://127.0.0.1:8000/rpc';
 
   test('should connect & disconnect', () async {
     final client = SurrealDB(testUrl)..connect();
@@ -145,5 +145,41 @@ void main() {
     } catch (e) {
       fail('exception thrown when selecting one: $e');
     }
+  });
+
+  /// Might no work with SurrealDB Release v1.0.0-beta.9
+  test('live queries', () async {
+    final client = SurrealDB(testUrl)..connect();
+    await client.wait();
+    await client.use('ns', 'db');
+    await client.signin(user: 'root', pass: 'root');
+
+    await client.delete('person');
+
+    final res = Completer<LiveQueryResponse>();
+
+    final data = {
+      'title': 'Founder & CEO',
+      'name': {
+        'first': 'Tobie',
+        'last': 'Morgan Hitchcock',
+      },
+      'marketing': false,
+    };
+
+    final queryUuid = parseUuid(
+      // ignore: avoid_dynamic_calls, cast_nullable_to_non_nullable
+      (await client.query('Live Select * From person') as List)[0]['result'],
+    );
+
+    client.listenLive(queryUuid, res.complete);
+
+    await client.create('person', data);
+
+    Future.delayed(const Duration(seconds: 1), () {
+      res.completeError(Exception('Live query response error'));
+    });
+
+    expect(await res.future, isA<LiveQueryResponse>());
   });
 }

@@ -7,3 +7,4 @@ linter:
   rules:
     avoid_redundant_argument_values: false
     public_member_api_docs: false
+    require_trailing_commas: false

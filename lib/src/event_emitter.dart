@@ -1,4 +1,4 @@
-import 'package:surrealdb/src/constants.dart';
+import 'package:surrealdb/src/common/constants.dart';
 
 class EventEmitter<K> {
   Map<K, List<VoidCallback<dynamic>>> listeners = {};
