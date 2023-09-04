@@ -156,8 +156,6 @@ void main() {
 
     await client.delete('person');
 
-    final res = Completer<LiveQueryResponse>();
-
     final data = {
       'title': 'Founder & CEO',
       'name': {
@@ -167,19 +165,32 @@ void main() {
       'marketing': false,
     };
 
-    final queryUuid = parseUuid(
-      // ignore: avoid_dynamic_calls, cast_nullable_to_non_nullable
-      (await client.query('Live Select * From person') as List)[0]['result'],
-    );
-
-    client.listenLive(queryUuid, res.complete);
+    // test live query
+    final streamQuery = await client.liveQuery('live select * from person');
 
     await client.create('person', data);
 
-    Future.delayed(const Duration(seconds: 1), () {
-      res.completeError(Exception('Live query response error'));
-    });
+    expect(streamQuery.stream, emits(isA<LiveQueryResponse>()));
 
-    expect(await res.future, isA<LiveQueryResponse>());
+    await client.delete('person');
+
+    // test live table
+    final streamTable = await client.liveTable('person');
+
+    await client.create('person', data);
+
+    expect(streamTable.stream, emits(isA<LiveQueryResponse>()));
+
+    await client.delete('person');
+
+    // test kill query
+
+    final streamQuery2 = await client.liveQuery('live select * from person');
+
+    await client.create('person', data);
+
+    await streamQuery2.kill();
+
+    expect(streamQuery2.isClosed, true);
   });
 }

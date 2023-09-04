@@ -25,7 +25,6 @@ void main(List<String> args) async {
       'first': 'Tobie',
       'last': 'Morgan Hitchcock',
     },
-    'marketing': false,
   });
   print(person);
 
@@ -41,6 +40,15 @@ void main(List<String> args) async {
   print(groupBy);
 
   print(persons.length);
+
+  // live query stream
+  final streamQuery = await client.liveQuery('live select * from person');
+
+  await client.create('person', data);
+
+  await for (var event in streamQuery) {
+    print(event);
+  }
 }
 ```
 

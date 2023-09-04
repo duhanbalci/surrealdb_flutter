@@ -1,8 +1,7 @@
-import 'package:surrealdb/src/common/constants.dart';
-import 'package:surrealdb/src/common/models.dart';
+import 'package:surrealdb/src/live_query.dart';
 import 'package:surrealdb/src/pinger.dart';
-import 'package:surrealdb/src/surrealdb_options.dart';
 import 'package:surrealdb/src/ws.dart';
+import 'package:surrealdb/surrealdb.dart';
 
 class SurrealDB {
   SurrealDB(
@@ -23,7 +22,7 @@ class SurrealDB {
   void connect() {
     try {
       _wsService.connect();
-      _pinger = Pinger(const Duration(seconds: 30));
+      // _pinger = Pinger(const Duration(seconds: 30));
       _wsService.waitConnect.then((value) => _pinger?.start(ping));
       if (token != null) authenticate(token!);
     } catch (e) {
@@ -118,13 +117,6 @@ class SurrealDB {
   /// @param token - The JWT authentication token.
   Future<void> authenticate(String token) {
     return _wsService.rpc(Methods.authenticate, [token]);
-  }
-
-  /// Kill a specific query.
-  /// @param query - The query to kill.
-  Future<void> kill(String query) async {
-    await _wsService.rpc(Methods.kill, ["'$query'"]);
-    _wsService.kill(query);
   }
 
   /// Assigns a value as a parameter for this connection.
@@ -244,21 +236,44 @@ class SurrealDB {
   }
 
   /// Subscribe to a table
-  Future<Object?> live(
+  Future<LiveQuery> liveTable(
+    String table, [
+    Map<String, Object?>? vars,
+  ]) async {
+    // final queryUuid = parseUuid(
+    //   // ignore: avoid_dynamic_calls, cast_nullable_to_non_nullable
+    //   (await client.query('Live Select * From person') as List)[0]['result'],
+    // );
+
+    final uuid = await _wsService.rpc(Methods.live, [
+      table,
+      if (vars != null) vars,
+    ]);
+
+    return _wsService.listenLiveStream(parseUuid(uuid));
+  }
+
+  /// Subscribe to a query
+  Future<LiveQuery> liveQuery(
     String query, [
     Map<String, Object?>? vars,
   ]) async {
-    return _wsService.rpc(Methods.live, [
-      query,
-      if (vars != null) vars,
-    ]);
-  }
+    // final queryUuid = parseUuid(
+    //   // ignore: avoid_dynamic_calls, cast_nullable_to_non_nullable
+    //   (await client.query('Live Select * From person') as List)[0]['result'],
+    // );
+    try {
+      final result = await _wsService.rpc(Methods.query, [
+        query,
+        if (vars != null) vars,
+      ]);
 
-  /// Add callback to an live query
-  void listenLive(
-    String queryUuid,
-    void Function(LiveQueryResponse) callback,
-  ) {
-    _wsService.listenLive(queryUuid, callback);
+      final uuid =
+          ((result as List?)?.firstOrNull as Map<String, Object?>)['result'];
+
+      return _wsService.listenLiveStream(parseUuid(uuid));
+    } catch (err) {
+      rethrow;
+    }
   }
 }

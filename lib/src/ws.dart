@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:surrealdb/src/event_emitter.dart';
+import 'package:surrealdb/src/live_query.dart';
 import 'package:surrealdb/surrealdb.dart';
 import 'package:web_socket_channel/status.dart' as status;
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -17,9 +18,7 @@ class WSService {
 
   WebSocketChannel? _ws;
   final _methodBus = EventEmitter<String>();
-
-  final _liveQueue = EventEmitter<String>();
-  final Map<String, List<LiveQueryResponse>> _unProcessedLiveQueue = {};
+  final Map<String, StreamController<LiveQueryResponse>> _liveQueryStreams = {};
 
   var _shouldReconnect = false;
 
@@ -58,17 +57,10 @@ class WSService {
   }
 
   Future<void> onDone() async {
-    // Socket closed
-    _liveQueue.listeners.forEach((key, value) {
-      _liveQueue.emit(
-          key,
-          LiveQueryResponse(
-            action: LiveQueryAction.close,
-            detail: LiveQueryClosureReason.socketClosed,
-          ));
-    });
-
-    _liveQueue.removeAllListener();
+    // close all live query streams
+    await Future.wait(_liveQueryStreams.values.map((c) => c.close()));
+    // clear all live query streams
+    _liveQueryStreams.clear();
 
     if (!_shouldReconnect) return;
 
@@ -148,7 +140,7 @@ class WSService {
               'result': Object? _,
             }
           }) {
-        _handleLiveBatch(data['result'] as Map<String, dynamic>);
+        _handleLiveMessage(data['result'] as Map<String, dynamic>);
       } else if (data
           case {
             'id': final String id,
@@ -171,7 +163,7 @@ class WSService {
     }
   }
 
-  void _handleLiveBatch(Object? data) {
+  void _handleLiveMessage(Object? data) {
     try {
       if (data
           case {
@@ -181,25 +173,9 @@ class WSService {
           }) {
         result ??= {};
         final uuid = parseUuid(id);
-        if (_liveQueue.listeners.containsKey(uuid)) {
-          if (result is List) {
-            result.map(
-              (e) => _liveQueue.emit(
-                uuid,
-                LiveQueryResponse(
-                    action: LiveQueryAction.fromText(action), result: e),
-              ),
-            );
-          } else {
-            _liveQueue.emit(
-              uuid,
-              LiveQueryResponse(
-                  action: LiveQueryAction.fromText(action), result: result),
-            );
-          }
-        } else {
-          _unProcessedLiveQueue.putIfAbsent(uuid, () => []);
-          _unProcessedLiveQueue[id]!.add(
+        final results = result is List ? result : [result];
+        for (final result in results) {
+          _liveQueryStreams[uuid]?.add(
             LiveQueryResponse(
               action: LiveQueryAction.fromText(action),
               result: result,
@@ -214,28 +190,26 @@ class WSService {
     }
   }
 
-  void listenLive(
-    String queryUuid,
-    void Function(LiveQueryResponse) cb,
-  ) {
-    _liveQueue.addListener(
-        queryUuid, (dynamic e) => cb(e as LiveQueryResponse));
-    if (_unProcessedLiveQueue.containsKey(queryUuid)) {
-      _unProcessedLiveQueue[queryUuid]!
-          .map((e) => _liveQueue.emit(queryUuid, e));
-      _unProcessedLiveQueue.remove(queryUuid);
-    }
-  }
+  LiveQuery listenLiveStream(String uuid) {
+    final hasKey = _liveQueryStreams.containsKey(uuid);
 
-  void kill(String queryUuid) {
-    _liveQueue
-      ..emit(
-        queryUuid,
-        LiveQueryResponse(
-          action: LiveQueryAction.close,
-          detail: LiveQueryClosureReason.queryKilled,
-        ),
-      )
-      ..removeListenersByEvent(queryUuid);
+    if (!hasKey) {
+      final streamController = StreamController<LiveQueryResponse>(
+        onCancel: () {
+          rpc(Methods.kill, [uuid]);
+          _liveQueryStreams.remove(uuid);
+        },
+      );
+      _liveQueryStreams[uuid] = streamController;
+      return LiveQuery(streamController, () {
+        rpc(Methods.kill, [uuid]);
+        _liveQueryStreams.remove(uuid);
+      });
+    } else {
+      return LiveQuery(_liveQueryStreams[uuid]!, () {
+        rpc(Methods.kill, [uuid]);
+        _liveQueryStreams.remove(uuid);
+      });
+    }
   }
 }
