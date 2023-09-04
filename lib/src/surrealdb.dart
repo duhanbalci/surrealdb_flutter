@@ -222,11 +222,11 @@ class SurrealDB {
   /// ***NOTE: This function patches the current document / record data with the specified JSON Patch data.***
   /// @param thing - The table name or the specific record ID to modify.
   /// @param data - The JSON Patch data with which to modify the records.
-  Future<void> modify(
+  Future<void> merge(
     String thing, [
     Object? data,
   ]) {
-    return _wsService.rpc(Methods.modify, [thing, data]);
+    return _wsService.rpc(Methods.merge, [thing, data]);
   }
 
   /// Deletes all records in a table, or a specific record, from the database
