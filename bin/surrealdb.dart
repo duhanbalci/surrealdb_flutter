@@ -27,7 +27,7 @@ void main(List<String> args) async {
   print(person);
 
   // select all records from person table
-  final persons = await client.select('person');
+  final persons = await client.select<Map<String, dynamic>>('person');
 
   print(persons.length);
 
