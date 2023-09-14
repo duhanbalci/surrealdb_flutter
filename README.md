@@ -10,26 +10,38 @@ SurrealDB client for Dart and Flutter.
 import 'package:surrealdb/surrealdb.dart';
 
 void main(List<String> args) async {
-  final client = SurrealDB('ws://localhost:8000/rpc');
+  final client = SurrealDB('ws://localhost:8000/rpc')..connect();
 
-  client.connect();
+  // wait for connection
   await client.wait();
+  // use test namespace and test database
   await client.use('test', 'test');
+  // authenticate with user and pass
   await client.signin(user: 'root', pass: 'root');
 
+  // create record in person table with json encodable object
   await client.create('person', TestModel(false, 'title'));
 
-  var person = await client.create('person', {
+  final data = {
     'title': 'Founder & CEO',
     'name': {
       'first': 'Tobie',
       'last': 'Morgan Hitchcock',
     },
-  });
+    'marketing': false,
+  };
+
+  // create record in person table with map
+  var person = await client.create('person', data);
+
   print(person);
 
+  // select all records from person table
   List<Map<String, Object?>> persons = await client.select('person');
 
+  print(persons.length);
+
+  // group by marketing column
   final groupBy = await client.query(
     'SELECT marketing, count() FROM type::table(\$tb) GROUP BY marketing',
     {
@@ -39,14 +51,13 @@ void main(List<String> args) async {
 
   print(groupBy);
 
-  print(persons.length);
-
   // live query stream
   final streamQuery = await client.liveQuery('live select * from person');
 
+  // 
   await client.create('person', data);
 
-  await for (var event in streamQuery) {
+  await for (final event in streamQuery.stream) {
     print(event);
   }
 }
@@ -132,3 +143,8 @@ Applies JSON Patch changes to all records, or a specific record, in the database
 ### `delete(String thing)`
 
 Deletes all records in a table, or a specific record, from the database
+
+### `liveQuery(String query, [Map<String, Object?>? vars])`
+
+Creates a live query stream
+

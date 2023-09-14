@@ -4,8 +4,12 @@ import 'package:surrealdb/surrealdb.dart';
 
 void main(List<String> args) async {
   final client = SurrealDB('ws://localhost:8000/rpc')..connect();
+
+  // wait for connection
   await client.wait();
-  await client.use('ns', 'db');
+  // use test namespace and test database
+  await client.use('test', 'test');
+  // authenticate with user and pass
   await client.signin(user: 'root', pass: 'root');
 
   final data = {
@@ -17,8 +21,30 @@ void main(List<String> args) async {
     'marketing': false,
   };
 
+  // create record in person table with map
+  final person = await client.create('person', data);
+
+  print(person);
+
+  // select all records from person table
+  final persons = await client.select('person');
+
+  print(persons.length);
+
+  // group by marketing column
+  final groupBy = await client.query(
+    r'SELECT marketing, count() FROM type::table($tb) GROUP BY marketing',
+    {
+      'tb': 'person',
+    },
+  );
+
+  print(groupBy);
+
+  // live query stream
   final streamQuery = await client.liveQuery('live select * from person');
 
+  //
   await client.create('person', data);
 
   await for (final event in streamQuery.stream) {

@@ -1,3 +1,7 @@
+## [0.7.0]
+
+- live query stream support added
+
 ## [0.6.2]
 
 - Fixed signin command to use namespace, database and scope parameters
