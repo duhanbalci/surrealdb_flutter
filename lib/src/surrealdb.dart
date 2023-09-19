@@ -213,7 +213,7 @@ class SurrealDB {
     String thing, [
     Object? data,
   ]) {
-    return _wsService.rpc(Methods.update, [thing, data]);
+    return _wsService.rpc(Methods.patch, [thing, data]);
   }
 
   /// Applies JSON Patch changes to all records,
