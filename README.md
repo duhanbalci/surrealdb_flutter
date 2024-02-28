@@ -51,10 +51,21 @@ void main(List<String> args) async {
 
   print(groupBy);
 
+  // patch the record
+  final change = await client.change(
+     'person:tobie', [
+	 { op: 'replace', path: '/name/last', value: 'Hitchcock' },
+	 { op: 'add', path: '/tags', value: ['developer', 'engineer'] },
+	 { op: 'remove', path: '/marketing' },
+   ],
+  );
+
+  print(change);
+
   // live query stream
   final streamQuery = await client.liveQuery('live select * from person');
 
-  // 
+  //
   await client.create('person', data);
 
   await for (final event in streamQuery.stream) {
@@ -131,14 +142,8 @@ Updates all records in a table, or a specific record, in the database
 **_NOTE: This function replaces the current document / record data with the specified data._**
 
 ### `change(String thing, [Object? data])`
-
-Modifies all records in a table, or a specific record, in the database
-**_NOTE: This function merges the current document / record data with the specified data._**
-
-### `modify(String thing, [Object? data])`
-
 Applies JSON Patch changes to all records, or a specific record, in the database
-**_NOTE: This function patches the current document / record data with the specified JSON Patch data._**
+**_NOTE: This function patches the current document / record data with the specified [JSON Patch](https://jsonpatch.com/) data._**
 
 ### `delete(String thing)`
 
@@ -147,4 +152,3 @@ Deletes all records in a table, or a specific record, from the database
 ### `liveQuery(String query, [Map<String, Object?>? vars])`
 
 Creates a live query stream
-

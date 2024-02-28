@@ -17,6 +17,7 @@ class Methods {
   static const merge = 'merge';
   static const delete = 'delete';
   static const live = 'live';
+  static const patch = 'patch';
 }
 
 enum LiveQueryAction {
