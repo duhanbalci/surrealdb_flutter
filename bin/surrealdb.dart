@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print
 
+import 'package:surrealdb/src/common/types.dart';
 import 'package:surrealdb/surrealdb.dart';
 
 void main(List<String> args) async {
@@ -11,6 +12,9 @@ void main(List<String> args) async {
   await client.use('test', 'test');
   // authenticate with user and pass
   await client.signin(user: 'root', pass: 'root');
+
+  // delete all records from person table
+  await client.delete('person');
 
   final data = {
     'title': 'Founder & CEO',
@@ -26,11 +30,6 @@ void main(List<String> args) async {
 
   print(person);
 
-  // select all records from person table
-  final persons = await client.select<Map<String, dynamic>>('person');
-
-  print(persons.length);
-
   // group by marketing column
   final groupBy = await client.query(
     r'SELECT marketing, count() FROM type::table($tb) GROUP BY marketing',
@@ -41,10 +40,27 @@ void main(List<String> args) async {
 
   print(groupBy);
 
+  // select all records from person table
+  final persons = await client.select<Map<String, dynamic>>('person');
+  print(persons.first);
+
+  // JSON patch operations
+  final patched = await client.patch(persons.first['id'] as String, [
+    const AddPatch('/name/middle', 'Morgan'),
+    const ReplacePatch('/title', 'Janitor'),
+    const RemovePatch('/name/last'),
+    const CopyPatch('/name/firstCopy', '/name/first'),
+    const CopyPatch('/name/firstCopy2', '/name/firstCopy'),
+    const MovePatch('/name/firstCopy2Moved', '/name/firstCopy2'),
+    const TestPatch('/name/firstCopy2Moved', 'Tobie'),
+  ]);
+
+  print(patched);
+
   // live query stream
   final streamQuery = await client.liveQuery('live select * from person');
 
-  //
+  // create record in person table
   await client.create('person', data);
 
   await for (final event in streamQuery.stream) {

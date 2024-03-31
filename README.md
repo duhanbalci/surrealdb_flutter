@@ -19,6 +19,9 @@ void main(List<String> args) async {
   // authenticate with user and pass
   await client.signin(user: 'root', pass: 'root');
 
+  // delete all records from person table
+  await client.delete('person');
+
   // create record in person table with json encodable object
   await client.create('person', TestModel(false, 'title'));
 
@@ -36,11 +39,6 @@ void main(List<String> args) async {
 
   print(person);
 
-  // select all records from person table
-  List<Map<String, Object?>> persons = await client.select('person');
-
-  print(persons.length);
-
   // group by marketing column
   final groupBy = await client.query(
     'SELECT marketing, count() FROM type::table(\$tb) GROUP BY marketing',
@@ -50,6 +48,24 @@ void main(List<String> args) async {
   );
 
   print(groupBy);
+
+  // select all records from person table
+  List<Map<String, Object?>> persons = await client.select('person');
+
+  print(persons.first);
+
+   // JSON patch operations
+  final patched = await client.patch(persons.first['id'] as String, [
+    const AddPatch('/name/middle', 'Morgan'),
+    const ReplacePatch('/title', 'Janitor'),
+    const RemovePatch('/name/last'),
+    const CopyPatch('/name/firstCopy', '/name/first'),
+    const CopyPatch('/name/firstCopy2', '/name/firstCopy'),
+    const MovePatch('/name/firstCopy2Moved', '/name/firstCopy2'),
+    const TestPatch('/name/firstCopy2Moved', 'Tobie'),
+  ]);
+
+  print(patched);
 
   // live query stream
   final streamQuery = await client.liveQuery('live select * from person');
@@ -130,12 +146,12 @@ Runs a set of SurrealQL statements against the database
 Updates all records in a table, or a specific record, in the database
 **_NOTE: This function replaces the current document / record data with the specified data._**
 
-### `change(String thing, [Object? data])`
+### `merge(String thing, [Object? data])`
 
 Modifies all records in a table, or a specific record, in the database
 **_NOTE: This function merges the current document / record data with the specified data._**
 
-### `modify(String thing, [Object? data])`
+### `patch(String thing, [List<Patch>? data])`
 
 Applies JSON Patch changes to all records, or a specific record, in the database
 **_NOTE: This function patches the current document / record data with the specified JSON Patch data._**

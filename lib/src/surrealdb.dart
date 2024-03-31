@@ -1,3 +1,4 @@
+import 'package:surrealdb/src/common/types.dart';
 import 'package:surrealdb/src/live_query.dart';
 import 'package:surrealdb/src/pinger.dart';
 import 'package:surrealdb/src/ws.dart';
@@ -186,10 +187,22 @@ class SurrealDB {
     String query, [
     Map<String, Object?>? vars,
   ]) async {
-    return _wsService.rpc(Methods.query, [
-      query,
-      if (vars != null) vars,
-    ]);
+    try {
+      final result = await _wsService.rpc(Methods.query, [
+        query,
+        if (vars != null) vars,
+      ]) as List?;
+
+      result?.forEach((element) {
+        if (element case {'status': 'ERR'}) {
+          throw Exception(element['detail'] ?? element['result']);
+        }
+      });
+
+      return result;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// Updates all records in a table, or a specific record, in the database.
@@ -209,24 +222,23 @@ class SurrealDB {
   /// ***NOTE: This function merges the current document / record data with the specified data.***
   /// @param thing - The table name or the specific record ID to change.
   /// @param data - The document / record data to insert.
-  Future<Object?> change(
-    String thing, [
-    Object? data,
-  ]) {
-    return _wsService.rpc(Methods.update, [thing, data]);
-  }
-
-  /// Applies JSON Patch changes to all records,
-  /// or a specific record, in the database.
-  ///
-  /// ***NOTE: This function patches the current document / record data with the specified JSON Patch data.***
-  /// @param thing - The table name or the specific record ID to modify.
-  /// @param data - The JSON Patch data with which to modify the records.
   Future<void> merge(
     String thing, [
     Object? data,
   ]) {
     return _wsService.rpc(Methods.merge, [thing, data]);
+  }
+
+  /// Applies JSON Patch changes to all records, or a specific record, in the database.
+  ///
+  /// ***NOTE: This function patches the current document / record data with the specified JSON Patch data.***
+  /// @param thing - The table name or the specific record ID to modify.
+  /// @param data - The JSON Patch data with which to modify the records.
+  Future<Object?> patch(
+    String thing, [
+    List<Patch>? data,
+  ]) {
+    return _wsService.rpc(Methods.patch, [thing, data]);
   }
 
   /// Deletes all records in a table, or a specific record, from the database
@@ -240,11 +252,6 @@ class SurrealDB {
     String table, [
     Map<String, Object?>? vars,
   ]) async {
-    // final queryUuid = parseUuid(
-    //   // ignore: avoid_dynamic_calls, cast_nullable_to_non_nullable
-    //   (await client.query('Live Select * From person') as List)[0]['result'],
-    // );
-
     final uuid = await _wsService.rpc(Methods.live, [
       table,
       if (vars != null) vars,
@@ -258,10 +265,6 @@ class SurrealDB {
     String query, [
     Map<String, Object?>? vars,
   ]) async {
-    // final queryUuid = parseUuid(
-    //   // ignore: avoid_dynamic_calls, cast_nullable_to_non_nullable
-    //   (await client.query('Live Select * From person') as List)[0]['result'],
-    // );
     try {
       final result = await _wsService.rpc(Methods.query, [
         query,

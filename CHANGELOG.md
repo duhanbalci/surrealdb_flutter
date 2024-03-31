@@ -1,3 +1,9 @@
+## [0.8.0]
+
+- **Breaking:** `change` method is now `merge`.
+- **FIX**: ([#20](https://github.com/duhanbalci/surrealdb_flutter/issues/20))
+- `patch` method added.
+
 ## [0.7.0]
 
 - live query stream support added

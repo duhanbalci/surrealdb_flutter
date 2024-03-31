@@ -21,7 +21,7 @@
       // Any custom environment variables to set when running the app with this
       // launch config.
       "env": {
-        "RELEASE_MODE": true
+        //"RELEASE_MODE": true
       },
       // Arguments to be passed to the Dart or Flutter app.
       "args": [

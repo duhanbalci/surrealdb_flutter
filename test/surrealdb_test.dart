@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:surrealdb/src/common/types.dart';
 import 'package:surrealdb/surrealdb.dart';
 import 'package:test/test.dart';
 
@@ -94,6 +95,54 @@ void main() {
       (data['name']! as Map<String, dynamic>)['last'],
     );
     expect(person['marketing'], data['marketing']);
+  });
+
+  test('should patch', () async {
+    final client = SurrealDB(testUrl)..connect();
+    await client.wait();
+    await client.use('ns', 'db');
+    await client.signin(user: 'root', pass: 'root');
+
+    final data = {
+      'title': 'Founder & CEO',
+      'name': {
+        'first': 'Tobie',
+        'last': 'Morgan Hitchcock',
+      },
+      'marketing': false,
+    };
+
+    await client.delete('person');
+    final res = await client.create('person', data);
+    final person = (res! as List)[0] as Map<String, dynamic>;
+
+    expect(person['id'], isNotNull);
+
+    final patched = await client.patch(person['id'] as String, [
+      const AddPatch('/name/middle', 'Morgan'),
+      const ReplacePatch('/title', 'Janitor'),
+      const RemovePatch('/name/last'),
+      const CopyPatch('/name/firstCopy', '/name/first'),
+      const CopyPatch('/name/firstCopy2', '/name/firstCopy'),
+      const MovePatch('/name/firstCopy2Moved', '/name/firstCopy2'),
+      const TestPatch('/name/firstCopy2Moved', 'Tobie'),
+    ]);
+
+    expect(patched, isNotNull);
+
+    final persons = await client.select<Map<String, dynamic>>('person');
+    final patchedPerson = persons.first;
+
+    expect(patchedPerson['id'], isNotNull);
+
+    final patchedPersonName = patchedPerson['name']! as Map<String, dynamic>;
+
+    expect(patchedPersonName['middle'], 'Morgan');
+    expect(patchedPerson['title'], 'Janitor');
+    expect(patchedPersonName['last'], isNull);
+    expect(patchedPersonName['firstCopy'], 'Tobie');
+    expect(patchedPersonName['firstCopy2'], isNull);
+    expect(patchedPersonName['firstCopy2Moved'], 'Tobie');
   });
 
   test('should select one', () async {
