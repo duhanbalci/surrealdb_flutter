@@ -8,9 +8,9 @@ environment:
 
 dependencies:
   uuid: ^4.3.3
-  web_socket_channel: ^2.4.4
+  web_socket_channel: ^3.0.1
 
 dev_dependencies:
-  lints: ^3.0.0
+  lints: ^4.0.0
   test: ^1.25.2
-  very_good_analysis: ^5.1.0
+  very_good_analysis: ^6.0.0
