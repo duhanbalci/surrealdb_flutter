@@ -138,6 +138,12 @@ class SurrealDB {
     return (await _wsService.rpc(Methods.let, [key, val]) ?? '') as String;
   }
 
+  /// Removes a variable from the current connection.
+  /// The name of the variable to remove is specified in the [key] parameter.
+  Future<void> unset(String key) {
+    return _wsService.rpc(Methods.unset, [key]);
+  }
+
   /// Creates a record in the database.
   ///
   /// The name of the table or record to create is specified

@@ -9,6 +9,7 @@ class Methods {
   static const authenticate = 'authenticate';
   static const invalidate = 'invalidate';
   static const let = 'let';
+  static const unset = 'unset';
   static const live = 'live';
   static const kill = 'kill';
   static const query = 'query';
