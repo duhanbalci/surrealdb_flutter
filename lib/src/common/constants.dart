@@ -18,6 +18,7 @@ class Methods {
   static const create = 'create';
   static const update = 'update';
   static const upsert = 'upsert';
+  static const relate = 'relate';
   static const merge = 'merge';
   static const patch = 'patch';
   static const delete = 'delete';

@@ -266,6 +266,24 @@ class SurrealDB {
     return _wsService.rpc(Methods.upsert, [thing, data]);
   }
 
+  /// Relates two records with a specified relation.
+  ///
+  /// The records to relate are specified in the [in_] and [out] parameters.
+  /// The relation table is specified in the [relation] parameter.
+  /// Additional data can be passed in the [data] parameter.
+  /// Returns the relation record.
+  Future<Object?> relate(
+    String in_,
+    String relation,
+    String out, [
+    Object? data,
+  ]) {
+    return _wsService.rpc(
+      Methods.relate,
+      [in_, relation, out, if (data != null) data],
+    );
+  }
+
   /// Merges specified data into either
   /// all records in a table or a single record.
   ///
