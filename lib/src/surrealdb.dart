@@ -242,7 +242,20 @@ class SurrealDB {
     return _wsService.rpc(Methods.update, [thing, data]);
   }
 
-  /// Merges specified data into either 
+  /// Updates all records in a table, or a specific record, in the database. If
+  /// the record does not exist, it is created.
+  ///
+  /// The table name or the record id is specified in the [thing] parameter.
+  /// The content of the record is specified in the [data] parameter.
+  /// Returns the updated record.
+  Future<Object?> upsert(
+    String thing, [
+    Object? data,
+  ]) {
+    return _wsService.rpc(Methods.upsert, [thing, data]);
+  }
+
+  /// Merges specified data into either
   /// all records in a table or a single record.
   ///
   /// The table name or the record id is specified in the [thing] parameter.
