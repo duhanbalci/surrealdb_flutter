@@ -216,6 +216,20 @@ class SurrealDB {
     }
   }
 
+  /// Executes built-in functions, custom functions,
+  /// or machine learning models with optional arguments
+  ///
+  /// Takes a function [name] and optional [version] and [args]. When using
+  /// a machine learning model, the [version] parameter is required.
+  /// Returns the result of the function.
+  Future<Object?> run(
+    String name, [
+    String? version,
+    List<Object?>? args,
+  ]) {
+    return _wsService.rpc(Methods.run, [name, version, args]);
+  }
+
   /// Updates all records in a table, or a specific record, in the database.
   ///
   /// The table name or the record id is specified in the [thing] parameter.

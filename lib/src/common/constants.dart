@@ -13,6 +13,7 @@ class Methods {
   static const create = 'create';
   static const select = 'select';
   static const query = 'query';
+  static const run = 'run';
   static const update = 'update';
   static const merge = 'merge';
   static const delete = 'delete';
