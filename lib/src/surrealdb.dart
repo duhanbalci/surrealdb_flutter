@@ -70,7 +70,7 @@ class SurrealDB {
     String? pass,
     String? namespace,
     String? database,
-    String? scope,
+    String? access,
     Map<String, Object?>? extra,
   }) async {
     final object = <String, Object?>{
@@ -78,7 +78,7 @@ class SurrealDB {
       if (pass != null) 'pass': pass,
       if (namespace != null) 'NS': namespace,
       if (database != null) 'DB': database,
-      if (scope != null) 'SC': scope,
+      if (access != null) 'AC': access,
       if (extra != null) ...extra
     };
 
@@ -94,7 +94,7 @@ class SurrealDB {
     String? pass,
     String? namespace,
     String? database,
-    String? scope,
+    String? access,
     Map<String, Object?>? extra,
   }) {
     final object = <String, Object?>{
@@ -102,7 +102,7 @@ class SurrealDB {
       if (pass != null) 'pass': pass,
       if (namespace != null) 'NS': namespace,
       if (database != null) 'DB': database,
-      if (scope != null) 'SC': scope,
+      if (access != null) 'AC': access,
       if (extra != null) ...extra
     };
 
