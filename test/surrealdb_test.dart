@@ -37,9 +37,10 @@ void main() {
       'marketing': false,
     };
     final res = await client.create('person', data);
-    final person = (res! as List)[0] as Map<String, dynamic>;
+    final person = res as Map<String, dynamic>?;
 
-    expect(person['id'], isNotNull);
+    expect(person, isNotNull);
+    expect(person!['id'], isNotNull);
     expect(person['title'], data['title']);
     expect(
       (person['name']! as Map<String, dynamic>)['first'],
@@ -52,7 +53,7 @@ void main() {
     expect(person['marketing'], data['marketing']);
   });
 
-  test('should delete,select', () async {
+  test('should delete, select', () async {
     final client = SurrealDB(testUrl)..connect();
     await client.wait();
     await client.use('ns', 'db');
@@ -67,9 +68,10 @@ void main() {
     };
     await client.delete('person');
     final res = await client.create('person', data);
-    var person = (res! as List)[0] as Map<String, dynamic>;
+    var person = res as Map<String, dynamic>?;
 
-    expect(person['id'], isNotNull);
+    expect(person, isNotNull);
+    expect(person!['id'], isNotNull);
     expect(person['title'], data['title']);
     expect(
       (person['name']! as Map<String, dynamic>)['first'],
@@ -114,9 +116,10 @@ void main() {
 
     await client.delete('person');
     final res = await client.create('person', data);
-    final person = (res! as List)[0] as Map<String, dynamic>;
+    final person = res as Map<String, dynamic>?;
 
-    expect(person['id'], isNotNull);
+    expect(person, isNotNull);
+    expect(person!['id'], isNotNull);
 
     final patched = await client.patch(person['id'] as String, [
       const AddPatch('/name/middle', 'Morgan'),
@@ -160,9 +163,10 @@ void main() {
     };
     await client.delete('person');
     final res = await client.create('person', data);
-    var person = (res! as List)[0] as Map<String, dynamic>;
+    var person = res as Map<String, dynamic>?;
 
-    expect(person['id'], isNotNull);
+    expect(person, isNotNull);
+    expect(person!['id'], isNotNull);
     expect(person['title'], data['title']);
     expect(
       (person['name']! as Map<String, dynamic>)['first'],

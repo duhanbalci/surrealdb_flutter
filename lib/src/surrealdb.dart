@@ -43,34 +43,43 @@ class SurrealDB {
     return _wsService.waitConnect;
   }
 
-  /// Ping SurrealDB instance
+  /// Pings SurrealDB instance
   Future<void> ping() async {
     await _wsService.rpc('ping');
   }
 
-  /// Switch to a specific namespace and database.
-  /// @param ns - Switches to a specific namespace.
-  /// @param db - Switches to a specific database.
-  Future<void> use(String ns, String db) {
-    return _wsService.rpc(Methods.use, [ns, db]);
+  /// Specifies or unsets the [namespace] and/or [database].
+  Future<void> use(String? namespace, String? database) {
+    return _wsService.rpc(
+      Methods.use,
+      [namespace, database],
+    );
   }
 
-  /// Retreive info about the current Surreal instance
-  /// @return Returns nothing!
+  /// Retreives the record of an authenticated user.
   Future<Object?> info() {
     return _wsService.rpc(Methods.info);
   }
 
-  /// Signs up to a specific authentication scope.
+  /// Returns version information about the database/server.
+  Future<Object?> version() {
+    return _wsService.rpc(Methods.version);
+  }
+
+  /// Signs up a new user using the query defined in a record access method
   ///
-  /// [extra] - can be used for scope authentication
-  /// @return The authenication token.
+  /// [user] and [pass] set the username and password for the new user.
+  /// [namespace] and [database] specify the namespace and database to use.
+  /// [access] specifies the access method to use.
+  /// [extra] can be used to specify any additional variables used by
+  /// the SIGNUP query of the record access method
+  /// Returns an authenication token.
   Future<String> signup({
     String? user,
     String? pass,
     String? namespace,
     String? database,
-    String? scope,
+    String? access,
     Map<String, Object?>? extra,
   }) async {
     final object = <String, Object?>{
@@ -78,23 +87,27 @@ class SurrealDB {
       if (pass != null) 'pass': pass,
       if (namespace != null) 'NS': namespace,
       if (database != null) 'DB': database,
-      if (scope != null) 'SC': scope,
+      if (access != null) 'AC': access,
       if (extra != null) ...extra
     };
 
     return (await _wsService.rpc(Methods.signup, [object]) ?? '') as String;
   }
 
-  /// Signs in to a specific authentication scope.
+  /// Signs in a user using the query defined in a record access method.
   ///
-  /// [extra] - can be used for scope authentication
-  /// @return The authenication token.
+  /// [user] and [pass] are the username and password of the user.
+  /// [namespace] and [database] specify the namespace and database to use.
+  /// [access] specifies the access method to use.
+  /// [extra] can be used to specify any additional variables used by
+  /// the SIGNIN query of the record access method.
+  /// Returns an authenication token.
   Future<Object?> signin({
     String? user,
     String? pass,
     String? namespace,
     String? database,
-    String? scope,
+    String? access,
     Map<String, Object?>? extra,
   }) {
     final object = <String, Object?>{
@@ -102,7 +115,7 @@ class SurrealDB {
       if (pass != null) 'pass': pass,
       if (namespace != null) 'NS': namespace,
       if (database != null) 'DB': database,
-      if (scope != null) 'SC': scope,
+      if (access != null) 'AC': access,
       if (extra != null) ...extra
     };
 
@@ -114,22 +127,29 @@ class SurrealDB {
     return _wsService.rpc(Methods.invalidate);
   }
 
-  /// Authenticates the current connection with a JWT token.
-  /// @param token - The JWT authentication token.
+  /// Authenticates the current connection with a JWT [token].
   Future<void> authenticate(String token) {
     return _wsService.rpc(Methods.authenticate, [token]);
   }
 
   /// Assigns a value as a parameter for this connection.
-  /// @param key - Specifies the name of the variable.
-  /// @param val - Assigns the value to the variable name.
+  /// Name of the parameter is [key] and the value is [val].
   Future<String> let(String key, String val) async {
     return (await _wsService.rpc(Methods.let, [key, val]) ?? '') as String;
   }
 
+  /// Removes a variable from the current connection.
+  /// The name of the variable to remove is specified in the [key] parameter.
+  Future<void> unset(String key) {
+    return _wsService.rpc(Methods.unset, [key]);
+  }
+
   /// Creates a record in the database.
-  /// @param thing - The table name or the specific record ID to create.
-  /// @param data - The document / record data to insert (should json encodable object or Class has toJson method).
+  ///
+  /// The name of the table or record to create is specified
+  /// in the [thing] parameter. The content of the record is
+  /// specified in the [data] parameter (should be a json encodable object).
+  /// Throws [NoSuchMethodError] if [data] is not json encodable.
   Future<Object?> create(String thing, dynamic data) async {
     try {
       return await _wsService.rpc(Methods.create, [
@@ -153,9 +173,10 @@ class SurrealDB {
   }
 
   /// Selects all records in a table, or a specific record, from the database.
-  /// @param thing - The table name or a record ID to select.
-  Future<List<T>> select<T>(String table) async {
-    final res = await _wsService.rpc(Methods.select, [table]);
+  /// The table name or the record id is specified in the [thing] parameter.
+  /// Returns a list of records.
+  Future<List<T>> select<T>(String thing) async {
+    final res = await _wsService.rpc(Methods.select, [thing]);
     if (res is List) {
       return res.cast<T>().toList();
     }
@@ -181,8 +202,9 @@ class SurrealDB {
   // }
 
   /// Runs a set of SurrealQL statements against the database.
-  /// @param query - Specifies the SurrealQL statements.
-  /// @param vars - Assigns variables which can be used in the query.
+  /// The statements are specified in the [query] parameter.
+  /// The [vars] parameter is used to pass variables to the query.
+  /// Returns the result of the query.
   Future<Object?> query(
     String query, [
     Map<String, Object?>? vars,
@@ -205,11 +227,25 @@ class SurrealDB {
     }
   }
 
+  /// Executes built-in functions, custom functions,
+  /// or machine learning models with optional arguments
+  ///
+  /// Takes a function [name] and optional [version] and [args]. When using
+  /// a machine learning model, the [version] parameter is required.
+  /// Returns the result of the function.
+  Future<Object?> run(
+    String name, [
+    String? version,
+    List<Object?>? args,
+  ]) {
+    return _wsService.rpc(Methods.run, [name, version, args]);
+  }
+
   /// Updates all records in a table, or a specific record, in the database.
   ///
-  /// ***NOTE: This function replaces the current document / record data with the specified data.***
-  /// @param thing - The table name or the specific record ID to update.
-  /// @param data - The document / record data to insert.
+  /// The table name or the record id is specified in the [thing] parameter.
+  /// The content of the record is specified in the [data] parameter.
+  /// Returns the updated record.
   Future<Object?> update(
     String thing, [
     Object? data,
@@ -217,11 +253,42 @@ class SurrealDB {
     return _wsService.rpc(Methods.update, [thing, data]);
   }
 
-  /// Modifies all records in a table, or a specific record, in the database.
+  /// Updates all records in a table, or a specific record, in the database. If
+  /// the record does not exist, it is created.
   ///
-  /// ***NOTE: This function merges the current document / record data with the specified data.***
-  /// @param thing - The table name or the specific record ID to change.
-  /// @param data - The document / record data to insert.
+  /// The table name or the record id is specified in the [thing] parameter.
+  /// The content of the record is specified in the [data] parameter.
+  /// Returns the updated record.
+  Future<Object?> upsert(
+    String thing, [
+    Object? data,
+  ]) {
+    return _wsService.rpc(Methods.upsert, [thing, data]);
+  }
+
+  /// Relates two records with a specified relation.
+  ///
+  /// The records to relate are specified in the [in_] and [out] parameters.
+  /// The relation table is specified in the [relation] parameter.
+  /// Additional data can be passed in the [data] parameter.
+  /// Returns the relation record.
+  Future<Object?> relate(
+    String in_,
+    String relation,
+    String out, [
+    Object? data,
+  ]) {
+    return _wsService.rpc(
+      Methods.relate,
+      [in_, relation, out, if (data != null) data],
+    );
+  }
+
+  /// Merges specified data into either
+  /// all records in a table or a single record.
+  ///
+  /// The table name or the record id is specified in the [thing] parameter.
+  /// The content of the record is specified in the [data] parameter.
   Future<void> merge(
     String thing, [
     Object? data,
@@ -229,11 +296,11 @@ class SurrealDB {
     return _wsService.rpc(Methods.merge, [thing, data]);
   }
 
-  /// Applies JSON Patch changes to all records, or a specific record, in the database.
+  /// Patches either all records in a table
+  /// or a single record with specified patches.
   ///
-  /// ***NOTE: This function patches the current document / record data with the specified JSON Patch data.***
-  /// @param thing - The table name or the specific record ID to modify.
-  /// @param data - The JSON Patch data with which to modify the records.
+  /// The table name or the record id is specified in the [thing] parameter.
+  /// The patches to apply are specified in the [data] parameter.
   Future<Object?> patch(
     String thing, [
     List<Patch>? data,
@@ -242,12 +309,15 @@ class SurrealDB {
   }
 
   /// Deletes all records in a table, or a specific record, from the database
-  /// [thing] is the table name or the record id
+  /// [thing] is the table name or the record id.
   Future<void> delete(String thing) {
     return _wsService.rpc(Methods.delete, [thing]);
   }
 
-  /// Subscribe to a table
+  /// Subscribes to a [table].
+  ///
+  /// Variables can be passed to the query using the [vars] parameter.
+  /// Returns a [LiveQuery] object.
   Future<LiveQuery> liveTable(
     String table, [
     Map<String, Object?>? vars,
@@ -260,7 +330,10 @@ class SurrealDB {
     return _wsService.listenLiveStream(parseUuid(uuid));
   }
 
-  /// Subscribe to a query
+  /// Subscribes to a live [query].
+  ///
+  /// Variables can be passed to the query using the [vars] parameter.
+  /// Returns a [LiveQuery] object.
   Future<LiveQuery> liveQuery(
     String query, [
     Map<String, Object?>? vars,

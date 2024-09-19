@@ -1,23 +1,28 @@
 typedef VoidCallback<T> = void Function(T);
 
 class Methods {
-  static const ping = 'ping';
   static const use = 'use';
   static const info = 'info';
+  static const version = 'version';
   static const signup = 'signup';
   static const signin = 'signin';
-  static const invalidate = 'invalidate';
   static const authenticate = 'authenticate';
-  static const kill = 'kill';
+  static const invalidate = 'invalidate';
   static const let = 'let';
-  static const create = 'create';
-  static const select = 'select';
-  static const query = 'query';
-  static const update = 'update';
-  static const merge = 'merge';
-  static const delete = 'delete';
+  static const unset = 'unset';
   static const live = 'live';
+  static const kill = 'kill';
+  static const query = 'query';
+  static const run = 'run';
+  static const select = 'select';
+  static const create = 'create';
+  static const update = 'update';
+  static const upsert = 'upsert';
+  static const relate = 'relate';
+  static const merge = 'merge';
   static const patch = 'patch';
+  static const delete = 'delete';
+  static const ping = 'ping';
 }
 
 enum LiveQueryAction {
