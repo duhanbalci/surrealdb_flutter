@@ -61,6 +61,11 @@ class SurrealDB {
     return _wsService.rpc(Methods.info);
   }
 
+  /// Returns version information about the database/server.
+  Future<Object?> version() {
+    return _wsService.rpc(Methods.version);
+  }
+
   /// Signs up a new user using the query defined in a record access method
   ///
   /// [user] and [pass] set the username and password for the new user.
