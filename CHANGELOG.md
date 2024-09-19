@@ -1,10 +1,14 @@
+## [1.0.0]
+
+- **Breaking:** Update for SurrealDB 2.0. Thanks to the PR from [kalucky0](https://github.com/kalucky0)
+
 ## [0.8.0]
 
 - **Breaking:** `change` method is now `merge`.
 - **FIX**: ([#20](https://github.com/duhanbalci/surrealdb_flutter/issues/20))
 - `patch` method added.
 
-## [0.7.0]
+## [0.7.0]
 
 - live query stream support added
 
