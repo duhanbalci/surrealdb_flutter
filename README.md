@@ -1,166 +1,170 @@
-[![Tests](https://github.com/duhanbalci/surrealdb_flutter/actions/workflows/dart-test.yml/badge.svg?branch=main)](https://github.com/duhanbalci/surrealdb_flutter/actions/workflows/dart-test.yml)
-
 # SurrealDB Client For Dart & Flutter
 
-SurrealDB client for Dart and Flutter.
+![Pub Version](https://img.shields.io/pub/v/surrealdb?logo=dart)
+[![Tests](https://github.com/duhanbalci/surrealdb_flutter/actions/workflows/dart-test.yml/badge.svg?branch=main)](https://github.com/duhanbalci/surrealdb_flutter/actions/workflows/dart-test.yml)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/duhanbalci/surrealdb_flutter?logo=github)
 
-## Quick Start
+This is a Dart client library for interacting with [SurrealDB](https://surrealdb.com/docs/), a highly scalable, distributed, and real-time database. This library enables developers to connect to SurrealDB instances, execute queries, authenticate users, and interact with database resources via WebSocket communication.
+
+## Features
+
+- ⚡ Connect and Disconnect: Establish or close a persistent WebSocket connection to a SurrealDB instance.
+- 🔐 Authentication: Authenticate with a token to manage access to the database.
+- 🗄️ Database Interaction: Use namespaces and databases, retrieve user information, and fetch database versions.
+- 🔄 Live Queries: Support for live querying via WebSocket streams.
+- ⚙️ Customizable Options: Set connection options and behavior using SurrealDBOptions.
+
+## Installation
+
+Add the following to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  surrealdb: ^1.0.0
+```
+Then run `dart pub get` or `flutter pub get`.
+
+## Usage
+
+### Connecting to SurrealDB
+
+To connect to a SurrealDB, create a SurrealDB client instance and call the `connect()` method. You can also provide a token for authentication.
 
 ```dart
 import 'package:surrealdb/surrealdb.dart';
 
-void main(List<String> args) async {
-  final client = SurrealDB('ws://localhost:8000/rpc')..connect();
+void main() async {
+  // Create a SurrealDB client instance
+  final db = SurrealDB('ws://localhost:8000', token: 'your-auth-token');
 
-  // wait for connection
-  await client.wait();
-  // use test namespace and test database
-  await client.use('test', 'test');
-  // authenticate with user and pass
-  await client.signin(user: 'root', pass: 'root');
+  // Connect to the database
+  db.connect();
 
-  // delete all records from person table
-  await client.delete('person');
+  // Wait for the connection to be established
+  await db.wait();
 
-  // create record in person table with json encodable object
-  await client.create('person', TestModel(false, 'title'));
+  // Use a specific namespace and database
+  await db.use('namespace', 'database');
 
-  final data = {
-    'title': 'Founder & CEO',
-    'name': {
-      'first': 'Tobie',
-      'last': 'Morgan Hitchcock',
-    },
-    'marketing': false,
-  };
+  // Fetch version information
+  final version = await db.version();
+  print('SurrealDB version: $version');
 
-  // create record in person table with map
-  var person = await client.create('person', data);
-
-  print(person);
-
-  // group by marketing column
-  final groupBy = await client.query(
-    'SELECT marketing, count() FROM type::table(\$tb) GROUP BY marketing',
-    {
-      'tb': 'person',
-    },
-  );
-
-  print(groupBy);
-
-  // select all records from person table
-  List<Map<String, Object?>> persons = await client.select('person');
-
-  print(persons.first);
-
-   // JSON patch operations
-  final patched = await client.patch(persons.first['id'] as String, [
-    const AddPatch('/name/middle', 'Morgan'),
-    const ReplacePatch('/title', 'Janitor'),
-    const RemovePatch('/name/last'),
-    const CopyPatch('/name/firstCopy', '/name/first'),
-    const CopyPatch('/name/firstCopy2', '/name/firstCopy'),
-    const MovePatch('/name/firstCopy2Moved', '/name/firstCopy2'),
-    const TestPatch('/name/firstCopy2Moved', 'Tobie'),
-  ]);
-
-  print(patched);
-
-  // live query stream
-  final streamQuery = await client.liveQuery('live select * from person');
-
-  // 
-  await client.create('person', data);
-
-  await for (final event in streamQuery.stream) {
-    print(event);
-  }
+  // Close the connection when done
+  db.close();
 }
 ```
 
-## Features
+### Authentication
 
-### `connect()`
+SurrealDB requires authentication to access resources. You can sign up, sign in, and authenticate users using the SurrealDB client.
 
-Connects to a database endpoint provided in constructer and authenticate with token if provided in constructer.
+#### Signing Up a User
 
-### `close()`
+To create a new user:
 
-Closes the persistent connection to the database.
+```dart
+final token = await db.signup(
+  user: 'new_user',
+  pass: 'password123',
+  namespace: 'namespace',
+  database: 'database',
+  access: 'users',
+);
+print('User signed up with token: $token');
+```
 
-### `wait()`
+#### Signing In
 
-Ensures connections established with the database and pinged successfully.
+To sign in an existing user:
 
-### `ping()`
+```dart
+final token = await db.signin(
+  user: 'existing_user', 
+  pass: 'password123',
+  namespace: 'namespace',
+  database: 'database',
+  access: 'users',
+);
+print('User signed in with token: $token');
+```
 
-Closes the persistent connection to the database.
+#### Token Authentication
 
-### `use(String namespace, String database)`
+You can also authenticate with a token:
 
-Switch to a specific namespace and database.
+```dart
+await db.authenticate('your-auth-token');
+```
 
-### `info()`
+### Basic Queries
 
-Retrieve info about the current Surreal instance
 
-### `signup(String user, String pass)`
+SurrealDB allows executing a variety of commands, including CRUD operations (Create, Read, Update, Delete) via queries. Here's how you can perform simple database operations.
 
-Signs up to a specific authentication scope
+#### 3.1 Create Records
 
-### `signin(String user, String pass)`
+```dart
+final data = {'title': 'My first post', 'content': 'Hello, SurrealDB!'};
+final result = await db.create('posts', data);
+print('Created record: $result');
+```
 
-Signs in to a specific authentication scope
+#### 3.2 Read Records
 
-### `invalidate()`
+To retrieve records, you can use the `select` method.
 
-Invalidates the authentication for the current connection
+```dart
+final posts = await db.select('posts');
+print('Fetched posts: $posts');
+```
 
-### `authenticate(String token)`
+You can also use queries to filter or manipulate the data:
 
-Authenticates the current connection with a JWT token
+```dart
+final specificPosts = await db.query(
+  r'SELECT * FROM posts WHERE title = $title',
+  {'title': 'My first post'},
+);
+print('Posts matching criteria: $specificPosts');
+```
 
-### `kill(String query)`
+#### 3.3 Update Records
 
-Kill a specific query
+Updating records is done by specifying the table and ID of the record:
 
-### `let(String key, String val)`
+```dart
+final updatedData = {'title': 'Updated post title'};
+await db.update('posts:id', updatedData);
+print('Record updated successfully');
+```
 
-Assigns a value as a parameter for this connection
+#### 3.4 Delete Records
 
-### `create(String thing, dynamic data)`
+To delete a record:
 
-Creates a record in the database. `data` has to be json encodable object or `class` has `toJson` method.
+```dart
+await db.delete('posts:id');
+print('Record deleted');
+```
 
-### `Future<List<T>> select(String table)`
+### Live Queries
 
-Selects all records in a table, or a specific record, from the database
+SurrealDB supports live queries over WebSocket. Use the LiveQuery class for subscribing to changes in data.
 
-### `query(String query, [Map<String, Object?>? vars])`
+```dart
+final liveQuery = await db.liveQuery('LIVE SELECT * FROM posts WHERE active = true');
+liveQuery.listen((event) {
+  print('Received update: ${event.result}');
+});
+```
 
-Runs a set of SurrealQL statements against the database
+You can read more about all the available methods and classes in the [API documentation](https://pub.dev/documentation/surrealdb/latest).
 
-### `update(String thing, [Object? data])`
+## Contributions
 
-Updates all records in a table, or a specific record, in the database
-**_NOTE: This function replaces the current document / record data with the specified data._**
+Contributions are welcome! Feel free to submit issues, feature requests, or pull requests to improve this library.
 
-### `merge(String thing, [Object? data])`
+## License
 
-Modifies all records in a table, or a specific record, in the database
-**_NOTE: This function merges the current document / record data with the specified data._**
-
-### `patch(String thing, [List<Patch>? data])`
-
-Applies JSON Patch changes to all records, or a specific record, in the database
-**_NOTE: This function patches the current document / record data with the specified JSON Patch data._**
-
-### `delete(String thing)`
-
-Deletes all records in a table, or a specific record, from the database
-
-### `liveQuery(String query, [Map<String, Object?>? vars])`
-
-Creates a live query stream
-
+This project is licensed under the MIT License. See the [`LICENSE`](https://github.com/duhanbalci/surrealdb_flutter/blob/main/LICENSE) file for more details.
