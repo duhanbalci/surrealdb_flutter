@@ -154,8 +154,16 @@ SurrealDB supports live queries over WebSocket. Use the LiveQuery class for subs
 
 ```dart
 final liveQuery = await db.liveQuery('LIVE SELECT * FROM posts WHERE active = true');
-liveQuery.listen((event) {
+liveQuery.stream.listen((event) {
   print('Received update: ${event.result}');
+});
+
+await db.create('posts', {
+  'title': 'My first post',
+});
+await db.create('posts', {
+  'title': 'My second post',
+  'active': true
 });
 ```
 

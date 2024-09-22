@@ -102,14 +102,14 @@ class SurrealDB {
   /// [extra] can be used to specify any additional variables used by
   /// the SIGNIN query of the record access method.
   /// Returns an authenication token.
-  Future<Object?> signin({
+  Future<String> signin({
     String? user,
     String? pass,
     String? namespace,
     String? database,
     String? access,
     Map<String, Object?>? extra,
-  }) {
+  }) async {
     final object = <String, Object?>{
       if (user != null) 'user': user,
       if (pass != null) 'pass': pass,
@@ -119,7 +119,7 @@ class SurrealDB {
       if (extra != null) ...extra
     };
 
-    return _wsService.rpc(Methods.signin, [object]);
+    return (await _wsService.rpc(Methods.signin, [object]) ?? '') as String;
   }
 
   /// Invalidates the authentication for the current connection.

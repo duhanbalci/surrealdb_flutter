@@ -1,3 +1,8 @@
+## [1.0.1]
+
+- Updated readme
+- `signin` method now returns `String` instead of `Object?`
+
 ## [1.0.0]
 
 - **Breaking:** Update for SurrealDB 2.0. Thanks to the PR from [kalucky0](https://github.com/kalucky0)

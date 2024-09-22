@@ -4,68 +4,52 @@ import 'package:surrealdb/src/common/types.dart';
 import 'package:surrealdb/surrealdb.dart';
 
 void main(List<String> args) async {
-  final client = SurrealDB('ws://localhost:8000/rpc')..connect();
+  final db = SurrealDB('ws://localhost:8000/rpc')..connect();
 
   // wait for connection
-  await client.wait();
-  // use test namespace and test database
-  await client.use('test', 'test');
-  // authenticate with user and pass
-  await client.signin(user: 'root', pass: 'root');
+  await db.wait();
+  // Use a specific namespace and database
+  await db.use('namespace', 'database');
 
-  // delete all records from person table
-  await client.delete('person');
+//   await db.signin(user: 'root', pass: 'root');
 
-  final data = {
-    'title': 'Founder & CEO',
-    'name': {
-      'first': 'Tobie',
-      'last': 'Morgan Hitchcock',
-    },
-    'marketing': false,
-  };
+//   await db.query(r'''
+// DEFINE ACCESS users ON DATABASE TYPE RECORD
+// 	SIGNUP ( CREATE user SET email = $email, pass = crypto::argon2::generate($pass) )
+// 	SIGNIN ( SELECT * FROM user WHERE email = $email AND crypto::argon2::compare(pass, $pass) )
+// 	DURATION FOR TOKEN 15m, FOR SESSION 12h;
+// ''');
 
-  // create record in person table with map
-  final person = await client.create('person', data);
-
-  print(person);
-
-  // group by marketing column
-  final groupBy = await client.query(
-    r'SELECT marketing, count() FROM type::table($tb) GROUP BY marketing',
-    {
-      'tb': 'person',
-    },
+  final token = await db.signin(
+    user: 'root',
+    pass: 'root',
+    // namespace: 'namespace',
+    // database: 'database',
+    // access: 'users',
   );
+  // print('User signed up with token: $token');
 
-  print(groupBy);
+  // await db.authenticate(token);
 
-  // select all records from person table
-  final persons = await client.select<Map<String, dynamic>>('person');
-  print(persons.first);
+  // Fetch version information
+  // final version = await db.query(r'SELECT * FROM $session');
+  // print('SurrealDB version: $version');
 
-  // JSON patch operations
-  final patched = await client.patch(persons.first['id'] as String, [
-    const AddPatch('/name/middle', 'Morgan'),
-    const ReplacePatch('/title', 'Janitor'),
-    const RemovePatch('/name/last'),
-    const CopyPatch('/name/firstCopy', '/name/first'),
-    const CopyPatch('/name/firstCopy2', '/name/firstCopy'),
-    const MovePatch('/name/firstCopy2Moved', '/name/firstCopy2'),
-    const TestPatch('/name/firstCopy2Moved', 'Tobie'),
-  ]);
+  final liveQuery =
+      await db.liveQuery('LIVE SELECT * FROM posts WHERE active = true');
+  liveQuery.stream.listen((event) {
+    print('Action: "${event.action}", result: ${event.result}');
+  });
 
-  print(patched);
-
-  // live query stream
-  final streamQuery = await client.liveQuery('live select * from person');
-
-  // create record in person table
-  await client.create('person', data);
-
-  await for (final event in streamQuery.stream) {
-    print(event);
-  }
+  await db.create('posts', {
+    'title': 'My first post',
+    'content': 'Hello, SurrealDB!',
+  });
+  await db.create('posts', {
+    'title': 'My second post',
+    'content': 'Hello, SurrealDB!',
+    'active': true
+  });
 }
 
 class AMODEL {
