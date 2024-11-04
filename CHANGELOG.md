@@ -1,3 +1,7 @@
+## [1.0.2]
+
+- protocols added to websocket connection to bypass warnings ([#26](https://github.com/duhanbalci/surrealdb_flutter/issues/26))
+
 ## [1.0.1]
 
 - Updated readme

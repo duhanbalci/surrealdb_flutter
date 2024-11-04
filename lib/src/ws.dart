@@ -27,7 +27,7 @@ class WSService {
   Future<void> connect() async {
     _shouldReconnect = true;
     try {
-      _ws = WebSocketChannel.connect(Uri.parse(url))
+      _ws = WebSocketChannel.connect(Uri.parse(url), protocols: [''])
         ..stream
             .where((event) => event is String)
             .map((event) => jsonDecode(event as String) as Map<String, dynamic>)
