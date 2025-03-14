@@ -4,6 +4,53 @@ import 'package:surrealdb/src/pinger.dart';
 import 'package:surrealdb/src/ws.dart';
 import 'package:surrealdb/surrealdb.dart';
 
+/// Type definition for middleware function
+/// [method] - The method being called
+/// [params] - The parameters passed to the method
+/// [next] - The function to call to continue the middleware chain
+typedef Middleware = Future<Object?> Function(
+  String method,
+  List<Object?> params,
+  Future<Object?> Function() next,
+);
+
+/// SurrealDB client for Dart & Flutter
+///
+/// This client provides an interface to interact with SurrealDB via WebSockets.
+/// It supports authentication, database operations, and middleware for request
+/// manipulation.
+///
+/// Example usage with token refresh middleware:
+/// ```dart
+/// final db = SurrealDB('ws://localhost:8000');
+/// db.connect();
+/// await db.wait();
+///
+/// // Add a token refresh middleware
+/// db.addMiddleware((method, params, next) async {
+///   try {
+///     // Try to execute the request normally
+///     return await next();
+///   } catch (e) {
+///     // If we get an authentication error
+///     if (e.toString().contains('authentication invalid')) {
+///       // Refresh the token
+///       final newToken = await refreshToken(); // Your token refresh logic
+///       
+///       // Re-authenticate with the new token
+///       await db.authenticate(newToken);
+///       
+///       // Retry the original request
+///       return await next();
+///     }
+///     // For other errors, just rethrow
+///     rethrow;
+///   }
+/// });
+///
+/// // Now all requests will automatically refresh the token if needed
+/// final results = await db.select('users');
+/// ```
 class SurrealDB {
   SurrealDB(
     this.url, {
@@ -18,6 +65,9 @@ class SurrealDB {
   Pinger? _pinger;
   late final WSService _wsService;
   final SurrealDBOptions options;
+  
+  /// List of middleware functions to execute before each request
+  final List<Middleware> _middlewares = [];
 
   /// Connects to a local or remote database endpoint.
   void connect() {
@@ -125,6 +175,25 @@ class SurrealDB {
   /// Invalidates the authentication for the current connection.
   Future<void> invalidate() {
     return _wsService.rpc(Methods.invalidate);
+  }
+
+  /// Adds a middleware function to be executed before each request
+  /// 
+  /// Middleware functions are executed in the order they are added.
+  /// Each middleware function must call the next function to continue the chain.
+  /// 
+  /// Example:
+  /// ```dart
+  /// db.addMiddleware((method, params, next) async {
+  ///   print('Before request: $method');
+  ///   final result = await next();
+  ///   print('After request: $method');
+  ///   return result;
+  /// });
+  /// ```
+  void addMiddleware(Middleware middleware) {
+    _middlewares.add(middleware);
+    _wsService.setMiddlewares(_middlewares);
   }
 
   /// Authenticates the current connection with a JWT [token].
