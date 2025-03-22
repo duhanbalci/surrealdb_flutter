@@ -11,6 +11,12 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 typedef WsFunctionParam = Map<String, dynamic>;
 typedef WsFunction = void Function(WsFunctionParam);
 
+typedef Middleware = Future<Object?> Function(
+  String method,
+  List<Object?> params,
+  Future<Object?> Function() next,
+);
+
 class WSService {
   WSService(this.url, this.options);
   final String url;
@@ -23,6 +29,14 @@ class WSService {
   var _shouldReconnect = false;
 
   var _reconnectDuration = const Duration(milliseconds: 100);
+  
+  final List<Middleware> _middlewares = [];
+  
+  void setMiddlewares(List<Middleware> middlewares) {
+    _middlewares
+      ..clear()
+      ..addAll(middlewares);
+  }
 
   Future<void> connect() async {
     _shouldReconnect = true;
@@ -87,47 +101,71 @@ class WSService {
     String method, [
     List<Object?> data = const [],
     Duration? timeout,
-  ]) {
-    final completer = Completer<Object?>();
-
+  ]) async {
     final ws = _ws;
 
     if (ws == null) {
-      return (completer..completeError('websocket not connected')).future;
+      throw Exception('websocket not connected');
     }
 
-    final id = getNextId();
-
-    ws.sink.add(
-      jsonEncode(
-        {
-          'method': method,
-          'id': id,
-          'params': data,
-        },
-      ),
-    );
-
-    if (timeout != Duration.zero) {
-      Future.delayed(
-        options.timeoutDuration,
-        () {
-          if (completer.isCompleted) return;
-          completer.completeError(TimeoutException('timeout', timeout));
-        },
+    // Function to execute the actual RPC call without middleware
+    Future<Object?> executeActualRpc() async {
+      final id = getNextId();
+      final completer = Completer<Object?>();
+      
+      ws.sink.add(
+        jsonEncode(
+          {
+            'method': method,
+            'id': id,
+            'params': data,
+          },
+        ),
       );
+
+      if (timeout != Duration.zero) {
+        Future.delayed(
+          options.timeoutDuration,
+          () {
+            if (completer.isCompleted) return;
+            completer.completeError(TimeoutException('timeout', timeout));
+          },
+        );
+      }
+
+      _methodBus.once<RpcResponse>(id, (rpcResponse) {
+        if (completer.isCompleted) return;
+        if (rpcResponse.error != null) {
+          completer.completeError(rpcResponse.error!);
+        } else {
+          completer.complete(rpcResponse.data);
+        }
+      });
+
+      return completer.future;
     }
 
-    _methodBus.once<RpcResponse>(id, (rpcResponse) {
-      if (completer.isCompleted) return;
-      if (rpcResponse.error != null) {
-        completer.completeError(rpcResponse.error!);
-      } else {
-        completer.complete(rpcResponse.data);
-      }
-    });
+    // If there are no middlewares, just execute the RPC call directly
+    if (_middlewares.isEmpty) {
+      return executeActualRpc();
+    }
 
-    return completer.future;
+    // Build the middleware chain
+    var index = 0;
+    
+    Future<Object?> executeMiddlewareChain() async {
+      if (index < _middlewares.length) {
+        final middleware = _middlewares[index++];
+        // Execute the middleware and pass the next middleware in the chain
+        return middleware(method, data, executeMiddlewareChain);
+      } else {
+        // All middlewares executed, perform the actual RPC call
+        return executeActualRpc();
+      }
+    }
+
+    // Start executing the middleware chain
+    return executeMiddlewareChain();
   }
 
   Future<void> _handleMessage(Map<String, dynamic> data) async {

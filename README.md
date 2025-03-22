@@ -97,8 +97,61 @@ You can also authenticate with a token:
 await db.authenticate('your-auth-token');
 ```
 
-### Basic Queries
+### Middleware
 
+SurrealDB Flutter client supports middleware that allows you to intercept and modify requests before they are sent to the database. This is particularly useful for implementing token refresh functionality or adding logging.
+
+#### Adding Middleware
+
+You can add middleware using the `addMiddleware` method:
+
+```dart
+db.addMiddleware((method, params, next) async {
+  // Do something before the request
+  print('Before request: $method with params: $params');
+  
+  // Execute the request
+  final result = await next();
+  
+  // Do something after the request
+  print('After request: $method with result: $result');
+  
+  return result;
+});
+```
+
+Multiple middleware functions can be added, and they will be executed in the order they were added.
+
+#### Token Refresh Example
+
+Here's how you can implement token refresh using middleware:
+
+```dart
+db.addMiddleware((method, params, next) async {
+  try {
+    // Try to execute the request normally
+    return await next();
+  } catch (e) {
+    // If we get an authentication error
+    if (e.toString().contains('authentication invalid')) {
+      // Refresh the token (implement your token refresh logic)
+      final newToken = await refreshToken(); 
+      
+      // Re-authenticate with the new token
+      await db.authenticate(newToken);
+      
+      // Retry the original request
+      return await next();
+    }
+    // For other errors, just rethrow
+    rethrow;
+  }
+});
+```
+
+This middleware will catch authentication errors, refresh the token, and retry the original request automatically.
+
+### Basic Queries
 
 SurrealDB allows executing a variety of commands, including CRUD operations (Create, Read, Update, Delete) via queries. Here's how you can perform simple database operations.
 
