@@ -246,4 +246,172 @@ void main() {
 
     expect(streamQuery2.isClosed, true);
   });
+
+  group('Middleware tests', () {
+    late SurrealDB client;
+
+    setUp(() async {
+      client = SurrealDB(testUrl)..connect();
+      await client.wait();
+      await client.use('ns', 'db');
+      await client.signin(user: 'root', pass: 'root');
+    });
+
+    tearDown(() {
+      client.close();
+    });
+
+    test('single middleware should be called before and after request',
+        () async {
+      // Setup test tracking variables
+      var beforeCalled = false;
+      var afterCalled = false;
+      var capturedMethod = '';
+      var capturedParams = <Object?>[];
+      Object? capturedResult;
+
+      // Add middleware
+      client.addMiddleware((method, params, next) async {
+        // Before request
+        beforeCalled = true;
+        capturedMethod = method;
+        capturedParams = params;
+
+        // Execute the request
+        final result = await next();
+
+        // After request
+        afterCalled = true;
+        capturedResult = result;
+
+        return result;
+      });
+
+      // Make a request
+      await client.version();
+
+      // Verify middleware was called correctly
+      expect(beforeCalled, isTrue);
+      expect(afterCalled, isTrue);
+      expect(capturedMethod, equals(Methods.version));
+      expect(capturedParams, equals([]));
+      expect(capturedResult, isNotNull);
+    });
+
+    test('multiple middlewares should be called in correct order', () async {
+      // Setup test tracking variables
+      final callOrder = <String>[];
+
+      // Add first middleware
+      client.addMiddleware((method, params, next) async {
+        callOrder.add('before1');
+        final result = await next();
+        callOrder.add('after1');
+        return result;
+      });
+
+      // Add second middleware
+      client.addMiddleware((method, params, next) async {
+        callOrder.add('before2');
+        final result = await next();
+        callOrder.add('after2');
+        return result;
+      });
+
+      // Make a request
+      await client.version();
+
+      // Verify middlewares were called in correct order
+      expect(callOrder, equals(['before1', 'before2', 'after2', 'after1']));
+    });
+
+    test('middleware should be able to modify the result', () async {
+      // Add middleware that modifies the result
+      client.addMiddleware((method, params, next) async {
+        final result = await next();
+
+        // Only modify version results for this test
+        if (method == Methods.version) {
+          return 'modified-result';
+        }
+
+        return result;
+      });
+
+      // Make a request
+      final result = await client.version();
+
+      // Verify result was modified
+      expect(result, equals('modified-result'));
+    });
+
+    test('middleware should handle errors properly', () async {
+      // Add middleware that catches and transforms errors
+      client.addMiddleware((method, params, next) async {
+        try {
+          return await next();
+        } catch (e) {
+          // Transform the error into a custom response
+          return 'error-handled';
+        }
+      });
+
+      // Add middleware that throws an error
+      client.addMiddleware((method, params, next) async {
+        if (method == Methods.version) {
+          throw Exception('Test error');
+        }
+        return next();
+      });
+
+      // Make a request
+      final result = await client.version();
+
+      // Verify error was handled
+      expect(result, equals('error-handled'));
+    });
+
+    test('middleware should demonstrate token refresh scenario', () async {
+      // Setup test tracking variables
+      var refreshCalled = false;
+      var retryCalled = false;
+
+      // Add token refresh middleware
+      client.addMiddleware((method, params, next) async {
+        try {
+          // First attempt
+          return await next();
+        } catch (e) {
+          // Simulate token refresh on auth error
+          if (e.toString().contains('test-auth-error')) {
+            refreshCalled = true;
+
+            // Simulate getting a new token and re-authenticating
+            // In a real scenario, this would call a token refresh API
+
+            // Try again with "new" token
+            retryCalled = true;
+            return 'success-after-refresh';
+          }
+          rethrow;
+        }
+      });
+
+      // Add middleware that simulates an auth error on first call
+      client.addMiddleware((method, params, next) async {
+        if (method == Methods.version && !retryCalled) {
+          throw Exception('test-auth-error');
+        }
+        return next();
+      });
+
+      // Make a request
+      final result = await client.version();
+
+      // Verify token refresh flow
+      expect(refreshCalled, isTrue);
+      expect(retryCalled, isTrue);
+      expect(result, equals('success-after-refresh'));
+    });
+  });
 }
