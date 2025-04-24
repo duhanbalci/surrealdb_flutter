@@ -1,3 +1,7 @@
+## [1.1.0+1]
+
+- fix: export LiveQuery
+
 ## [1.1.0]
 
 - Adding Middleware support. Thanks to the PR from ([appinteractive](https://github.com/appinteractive))
