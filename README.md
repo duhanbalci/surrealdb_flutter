@@ -35,7 +35,7 @@ import 'package:surrealdb/surrealdb.dart';
 
 void main() async {
   // Create a SurrealDB client instance
-  final db = SurrealDB('ws://localhost:8000', token: 'your-auth-token');
+  final db = SurrealDB('ws://localhost:8000/rpc', token: 'your-auth-token');
 
   // Connect to the database
   db.connect();
