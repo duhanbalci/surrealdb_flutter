@@ -12,7 +12,7 @@ This is a Dart client library for interacting with [SurrealDB](https://surrealdb
 - 🔐 Authentication: Authenticate with a token to manage access to the database.
 - 🗄️ Database Interaction: Use namespaces and databases, retrieve user information, and fetch database versions.
 - 🔄 Live Queries: Support for live querying via WebSocket streams.
-- ⚙️ Customizable Options: Set connection options and behavior using SurrealDBOptions.
+- ⚙️ Customizable Options: Set connection options and behavior using `SurrealDBOptions`.
 
 ## Installation
 
@@ -35,7 +35,7 @@ import 'package:surrealdb/surrealdb.dart';
 
 void main() async {
   // Create a SurrealDB client instance
-  final db = SurrealDB('ws://localhost:8000', token: 'your-auth-token');
+  final db = SurrealDB('ws://localhost:8000/rpc', token: 'your-auth-token');
 
   // Connect to the database
   db.connect();
@@ -203,7 +203,7 @@ print('Record deleted');
 
 ### Live Queries
 
-SurrealDB supports live queries over WebSocket. Use the LiveQuery class for subscribing to changes in data.
+SurrealDB supports live queries over WebSocket. Use the `LiveQuery` class for subscribing to changes in data.
 
 ```dart
 final liveQuery = await db.liveQuery('LIVE SELECT * FROM posts WHERE active = true');
