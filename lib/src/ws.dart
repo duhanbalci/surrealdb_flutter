@@ -29,9 +29,9 @@ class WSService {
   var _shouldReconnect = false;
 
   var _reconnectDuration = const Duration(milliseconds: 100);
-  
+
   final List<Middleware> _middlewares = [];
-  
+
   void setMiddlewares(List<Middleware> middlewares) {
     _middlewares
       ..clear()
@@ -64,6 +64,7 @@ class WSService {
     _shouldReconnect = false;
     _ws?.sink.close(status.normalClosure);
     _ws = null;
+    _methodBus.removeAllListener();
   }
 
   Future<void> reconnect() async {
@@ -75,6 +76,7 @@ class WSService {
     await Future.wait(_liveQueryStreams.values.map((c) => c.close()));
     // clear all live query streams
     _liveQueryStreams.clear();
+    _methodBus.removeAllListener();
 
     if (!_shouldReconnect) return;
 
@@ -110,10 +112,21 @@ class WSService {
 
     // Function to execute the actual RPC call without middleware
     Future<Object?> executeActualRpc() async {
+      // Re-capture current WebSocket to avoid using stale reference
+      final currentWs = _ws;
+      if (currentWs == null) {
+        throw Exception('websocket not connected');
+      }
+
+      // Check if WebSocket sink is closed
+      if (currentWs.closeCode != null) {
+        throw Exception('websocket connection closed');
+      }
+
       final id = getNextId();
       final completer = Completer<Object?>();
-      
-      ws.sink.add(
+
+      currentWs.sink.add(
         jsonEncode(
           {
             'method': method,
@@ -133,14 +146,19 @@ class WSService {
         );
       }
 
-      _methodBus.once<RpcResponse>(id, (rpcResponse) {
-        if (completer.isCompleted) return;
-        if (rpcResponse.error != null) {
-          completer.completeError(rpcResponse.error!);
-        } else {
-          completer.complete(rpcResponse.data);
-        }
-      });
+      try {
+        _methodBus.once<RpcResponse>(id, (rpcResponse) {
+          if (completer.isCompleted) return;
+          if (rpcResponse.error != null) {
+            completer.completeError(rpcResponse.error!);
+          } else {
+            completer.complete(rpcResponse.data);
+          }
+        });
+      } catch (e) {
+        // If we can't add listener, the connection is probably closed
+        completer.completeError(Exception('websocket connection closed: $e'));
+      }
 
       return completer.future;
     }
@@ -152,7 +170,7 @@ class WSService {
 
     // Build the middleware chain
     var index = 0;
-    
+
     Future<Object?> executeMiddlewareChain() async {
       if (index < _middlewares.length) {
         final middleware = _middlewares[index++];
