@@ -1,5 +1,4 @@
 import 'package:surrealdb/src/common/types.dart';
-import 'package:surrealdb/src/live_query.dart';
 import 'package:surrealdb/src/pinger.dart';
 import 'package:surrealdb/src/ws.dart';
 import 'package:surrealdb/surrealdb.dart';
@@ -36,10 +35,10 @@ typedef Middleware = Future<Object?> Function(
 ///     if (e.toString().contains('authentication invalid')) {
 ///       // Refresh the token
 ///       final newToken = await refreshToken(); // Your token refresh logic
-///       
+///
 ///       // Re-authenticate with the new token
 ///       await db.authenticate(newToken);
-///       
+///
 ///       // Retry the original request
 ///       return await next();
 ///     }
@@ -65,7 +64,7 @@ class SurrealDB {
   Pinger? _pinger;
   late final WSService _wsService;
   final SurrealDBOptions options;
-  
+
   /// List of middleware functions to execute before each request
   final List<Middleware> _middlewares = [];
 
@@ -178,10 +177,10 @@ class SurrealDB {
   }
 
   /// Adds a middleware function to be executed before each request
-  /// 
+  ///
   /// Middleware functions are executed in the order they are added.
   /// Each middleware function must call the next function to continue the chain.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// db.addMiddleware((method, params, next) async {
