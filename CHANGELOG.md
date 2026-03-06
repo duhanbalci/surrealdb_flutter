@@ -1,3 +1,6 @@
+## [1.1.2]
+- fix: WebSocketChannel connection protocols
+
 ## [1.1.1]
 - fix: handle WebSocket reconnection in middleware chain ([#32](https://github.com/duhanbalci/surrealdb_flutter/pull/32))
 - fix: connection URL in README ([#31](https://github.com/duhanbalci/surrealdb_flutter/pull/31))
